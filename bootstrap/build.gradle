@@ -11,7 +11,7 @@ sourceCompatibility = 1.8
 evaluationDependsOn(":haikurt")
 
 dependencies {
-  implementation project(":haikurt")
+  compile project(":haikurt")
 }
 
 tasks.withType(JavaCompile) {
