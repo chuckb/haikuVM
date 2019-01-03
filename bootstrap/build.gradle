@@ -8,12 +8,14 @@ group = "org.haikuvm"
 
 sourceCompatibility = 1.8
 
+evaluationDependsOn(":haikuRT")
+
 dependencies {
   compile project(":haikuRT")
 }
 
 tasks.withType(JavaCompile) {
-  options.bootstrapClasspath = files("../haikuRT/build/classes/java/main", "../lib/nxt/classes.jar")
+  options.bootstrapClasspath = files(project(":haikuRT").tasks["compileJava"].destinationDir, "../lib/nxt/classes.jar")
 }
 
 jar {
