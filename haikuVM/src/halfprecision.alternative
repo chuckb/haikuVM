@@ -1,0 +1,81 @@
+#include "haikuJ2C.h"
+
+/**
+http://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion
+ 
+Complete conversion from single precision to half precision. 
+This is a direct copy from my SSE version, so it's branch-less. 
+It makes use of the fact that in GCC (-true == ~0), 
+may be true for VisualStudio too but, I don't have a copy.
+*/
+
+typedef union {
+	float f;
+	int32_t si;
+	uint32_t ui;
+} Bits;
+
+#define shift (13)
+#define shiftSign (16)
+#define infN (0x7F800000L) 
+// flt32 infinity
+#define maxN (0x477FE000L)
+// max flt16 normal as a flt32
+#define minN (0x38800000L)
+// min flt16 normal as a flt32
+#define signN (0x80000000L)
+// flt32 sign bit
+#define infC  (infN >> shift)
+#define nanN  ((infC + 1) << shift)
+// minimum flt16 nan as a flt32
+#define maxC  (maxN >> shift)
+#define minC  (minN >> shift)
+#define signC  (signN >> shiftSign)
+// flt16 sign bit
+#define mulN  (0x52000000L)
+// (1 << 23) / minN
+#define mulC  (0x33800000L)
+// minN / (1 << (23 - shift))
+#define subC  (0x03FF)
+// max flt32 subnormal down shifted
+#define norC  (0x0400)
+// min flt32 normal down shifted
+#define maxD  (infC - maxC - 1)
+#define minD  (minC - subC - 1)
+
+jfloat floatToInt16(float value) {
+	Bits v, s;
+	uint32_t sign;
+	v.f = value;
+	sign = v.si & signN;
+	v.si ^= sign;
+	sign >>= shiftSign; // logical shift
+	s.si = mulN;
+	s.si = s.f * v.f; // correct subnormals
+	v.si ^= (s.si ^ v.si) & -(minN > v.si);
+	v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxN));
+	v.si ^= (nanN ^ v.si) & -((nanN > v.si) & (v.si > infN));
+	v.ui >>= shift; // logical shift
+	v.si ^= ((v.si - maxD) ^ v.si) & -(v.si > maxC);
+	v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
+	return v.ui | sign;
+}
+
+float int16ToFloat(uint16_t value) {
+	Bits v, s;
+	uint32_t sign;
+	uint32_t mask;
+	v.ui = value;
+	sign = v.si & signC;
+	v.si ^= sign; 
+	sign <<= shiftSign;
+	v.si ^= ((v.si + minD) ^ v.si) & -(v.si > subC);
+	v.si ^= ((v.si + maxD) ^ v.si) & -(v.si > maxC);
+	s.si = mulC;
+	s.f *= v.si;
+	mask = -(norC > v.si);
+	v.si <<= shift;
+	v.si ^= (s.si ^ v.si) & mask;
+	v.si |= sign;
+	return v.f;
+}

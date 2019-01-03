@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/examples"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/bootstrap"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/haikuRT"/>
+	<classpathentry kind="lib" path="/lib/nxt/classes.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

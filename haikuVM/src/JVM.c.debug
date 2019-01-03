@@ -1,0 +1,305 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+
+#include "haikuJ2C.h"
+#include "haikuC/haikuConfig.h"
+#include "simpleOS.h"
+
+
+
+#define Debug(x)
+#define GDebug(x) Debug(if (1) x)
+
+extern void GC();
+
+uint8_t bc;
+int8_t t;
+
+
+extern const ByteCode main_YLjava_lang_String;
+extern const ByteCode throwException_V;
+extern const class_t java_lang_Thread__class;
+
+
+void unimplemented() {
+	throwException(InternalError, 0); //unimplemented byte code
+}
+
+void unused() {
+	throwException(InternalError, 1); //(normaly) unused byte code
+}
+
+__attribute__((noinline)) int32_t GETCODEDWORD2() {
+	int32_t codei=pgm_read_dwordRef(*((int32_t*)pc));
+	pc+=4;
+	return codei;
+}
+
+#if NO_MICRO
+__attribute__((noinline)) void* GETCODEADR2() {
+	void* codei=pgm_read_dwordRef(*((void**)pc));
+	pc+=sizeof(void*);
+	return codei;
+}
+#endif
+
+__attribute__((noinline)) int16_t GETCODEWORD2() {
+	Debug(uint8_t a=pgm_read_byteRef(pc[0]);)
+	Debug(uint8_t b=pgm_read_byteRef(pc[1]);)
+	//int16_t codei=(pgm_read_byteRef(pc[1]) & 0xff) | (pgm_read_byteRef(pc[1]) << 8);
+
+	int16_t codei=pgm_read_wordRef(*((int16_t*)pc));
+	GDebug(jprintf("    word=%08d (%d, %d)", codei, a, b));
+	pc+=2;
+	return codei;
+}
+
+__attribute__((noinline)) int GETCODEBYTE2() {
+	uint8_t codei=pgm_read_byteRef(*pc);
+	GDebug(jprintf("    byte=%03d", codei));
+	pc+=1;
+	return codei;
+}
+
+#define STAT_BC 0
+
+#if (NO_MICRO) && _DEBUG
+#undef STAT_BC
+#define STAT_BC 0
+#endif
+
+#if STAT_BC
+int statbc[256];
+#endif
+
+void switchThread() {
+	// Task switch
+#if TRACEING
+	void *save=currentThread;
+#endif
+#if HAIKU_Threads
+	*dataSp=top.s1;
+	currentThread->programcounter=pc;
+	currentThread->stackpointer=dataSp;
+	currentThread->stackframe=lsp;
+	currentThread->stack=stack;
+#endif
+	while(1) {
+		incrementalGC(HAIKU_IncrementalGCSlice);
+		statics.java_lang_Thread_currentThread = (jobject) currentThread->next;
+
+			// restart if state is IDLE or YIELD
+		if (currentThread->state<=YIELD ||
+			// restart if state is WAITING and waiting time is over (see sleep(..) and wait(..))
+		    (currentThread->state==WAITING && (julong)(currentThread->waitUntil)<=millis())) break;
+#if STAT_BC
+		{
+			int i;
+			for(i=0; i<256; i++) { 
+				jprintf("%d	%d	%s\n", i, statbc[i], bytecodeDesc[i]);
+			}
+			fatal("stat_bc forced end");
+		}
+#endif
+	}
+
+	currentThread->state=IDLE;
+#if HAIKU_Threads
+	pc=(unsigned char*)currentThread->programcounter;
+	dataSp=currentThread->stackpointer;
+	lsp=currentThread->stackframe;
+	stack=currentThread->stack;
+	top.s1=*dataSp;
+#endif
+#if TRACEING
+	if (save!=currentThread) {
+		jprintf("################################# next Thread %p\n", currentThread);
+	}
+#endif
+}
+
+/**
+ * How to set a breakpoint:
+{
+	extern Fibonacci_main_YLjava_lang_String_t Fibonacci_main_YLjava_lang_String;
+	if ( &Fibonacci_main_YLjava_lang_String.op28==pc) {
+		jprintf("breakpoint\n");
+	}
+or
+	if ( &main_YLjava_lang_String.code[19]==pc) {
+		jprintf("breakpoint\n");
+	}
+}
+*/
+#if DEBUG_DISPATCHER
+static void interpret(){
+BytecodeFoo op;
+	for(t=0; ; t++) { //long t kostet 10% mehr Laufzeit
+#if HAIKU_Threads
+		switchThread();
+#endif
+		bc=pgm_read_byteRef((*pc));
+		op=(BytecodeFoo)pgm_read_wordRef(bytecodeFoo[bc]);
+			GDebug({char memnon[30]; memcpy_P(memnon, (char *)(pgm_read_wordRef(bytecodeDesc[bc])), strlen_P((char *)(pgm_read_wordRef(bytecodeDesc[bc])))+1); jprintf("%p (%ld):    bc=0x%02x %-20s op=%p\n", pc, t, bc, memnon, op); });
+			GDebug(showstack("op"));
+			GDebug(haikuHeapWalk("heap", 1);)
+			GDebug(haikuHeapWalk("free", 0);)
+		pc++;
+		(*op)();
+			GDebug(jprintf("\n"));
+	}
+}
+#else
+
+#if DEBUG_DISPATCHER
+#define	LABEL(x)	OPF_##x
+#define SWITCH(x)	(*  (BytecodeFoo)pgm_read_wordRef(bytecodeFoo[bc])  )();
+#define PUSHTOP0()	pushTop0();
+#define LOOP_THREAD() switchThread()
+typedef BytecodeFoo label_t;
+
+#define ENDSWITCH	
+
+// include C-code which is never used
+#define BEGCODE(x)	OPL_##x: {
+#define ENDCODE		};
+
+
+#elif NO_MICRO
+
+#define	LABEL(x)	BC_##x
+
+#define SWITCH(x)	switch(*(bytecodeLabels+x)) {
+#define BEGCODE(x)    case BC_##x: {
+#define ENDCODE       }; break;
+#define ENDSWITCH	default: unused(); }
+
+//#define PUSHTOP0()	goto loopTop0
+#define PUSHTOP0()	pushTop0();
+#define LOOP_THREAD() goto loopThread
+typedef int label_t;
+
+#else
+
+#define	LABEL(x)	&&OPL_##x
+#define SWITCH(x)	goto *(label_t)pgm_read_wordRef(*(bytecodeLabels+x));
+
+#define BEGCODE(x)  OPL_##x: {
+#define ENDCODE     }; goto loop;
+
+#define ENDSWITCH
+//#define PUSHTOP0()	goto loopTop0
+#define PUSHTOP0()	pushTop0();
+#define LOOP_THREAD() goto loopThread
+
+typedef void * label_t;
+
+#endif
+
+#pragma GCC diagnostic ignored "-Wunused-label"
+static void interpret(){
+#include "haikuC/bytecodeDispatcher.h"
+	Debug(int counter=0);
+
+#if STAT_BC
+	{
+		int i;
+		for(i=0; i<256; i++) {
+			statbc[i]=0;
+		}
+	}
+#endif
+
+
+	t=-1;
+loopThread:
+
+	t++;
+	if ((t&0x3)==0) {
+		switchThread();
+	}
+loop:
+	Debug(counter++);
+	bc=pgm_read_byteRef((*pc));
+#if STAT_BC
+	statbc[bc]++;
+#endif
+//	if (t>145448) {
+//		printf("%d [%3d] %-20s %3d %12d\n", t, bc, (char *)(pgm_read_wordRef(bytecodeDesc[bc])), dataSp, top.s1.i);
+//	}
+	pc++;
+		GDebug(jprintf("\n"));
+		GDebug(showstack("before following op "));
+		GDebug(haikuHeapWalk("heap", 1);)
+		GDebug(haikuHeapWalk("free", 0);)
+		GDebug({char memnon[80]; memcpy_P(memnon, (char *)(pgm_read_wordRef(bytecodeDesc[bc])), strlen_P((char *)(pgm_read_wordRef(bytecodeDesc[bc])))+1); jprintf("%p (%ld):    bc=0x%02x %-20s\n", pc, counter, bc, memnon); });
+
+	SWITCH(bc)
+#include "Bytecodes.h"
+	ENDSWITCH;
+
+	goto loop;
+}
+#endif
+
+
+//-Wl,-u,vfprintf,--gc-sections -lprintf_flt -lm
+//-Wl,-u,vfprintf,-l,printf_flt,--gc-sections -lm
+
+//-Wl,-u,vfprintf,-l,printf_flt,--gc-sections
+
+
+heapmem_t heapmem; // ={2*HEAPSIZE, FREE};
+
+/*
+ * setup JVM and interpret main_YLjava_lang_String for ever (which is not over and over again)
+ */
+void startJVM() {
+
+#if defined(USBCON)
+  USBCON &= 127; // CLEAR BIT 7 -> disable USB interrupt
+#endif
+	heapmem.allocsize=HEAPSIZE;
+
+	//must be this order to save Mark(stack) in java_lang_System_gc_V()
+	statics.java_lang_Thread_currentThread=newInstance(&java_lang_Thread__class);
+	stack= (stackFrame4Debug_t*) newStack(HAIKU_InitialMainThreadStackSize);
+	dataSp=&stack->stack[0];
+
+
+#if	_DEBUG
+	jprintf("sizeof(jdouble)=%d\n", sizeof(jdouble));
+	jprintf("sizeof(jfloat)=%d\n", sizeof(jfloat));
+	jprintf("sizeof(jlong)=%d\n", sizeof(jlong));
+	jprintf("sizeof(jint)=%d\n", sizeof(jint));
+	jprintf("sizeof(void*)=%d\n", sizeof(void*)); // 16, 32, 64
+	jprintf("sizeof(OPadr)=%d\n", sizeof(OPadr)); // 16, 32, 64
+	jprintf("sizeof(stack_t)=%d\n", sizeof(stack_t));
+	jprintf("sizeof(array_t)=%d\n", sizeof(array_t));
+	{
+		struct aligntest {
+			jbyte   dummy1;
+			jobject dummy2;
+		};
+		if ((sizeof(struct aligntest)&1) ==0) {
+			jprintf("ERROR sizeof(struct aligntest)=%d expected to be odd\n", sizeof(struct aligntest));
+		}
+	}
+	jprintf("HEAPSIZE=%d\n", HEAPSIZE);
+
+	showstack("start");
+	haikuHeapWalk("heap", 1);
+	haikuHeapWalk("free", 0);
+#endif
+
+	sei();
+
+	currentThread->next=currentThread;
+	currentThread->stack=stack;
+
+	invoke(&main_YLjava_lang_String);
+	interpret(); // for ever
+}
+

@@ -1,0 +1,188 @@
+Oh, I see you took 'examples:processing.libraries.LiquidCrystal.LiquidCrystal' as a blueprint and started to write your own code.
+
+First: it's ok if you put your focus on JNI and C/C++ code when using HaikuVM. (In this case the Java part of the interface degenerates to a proxy to the real C subject.) But I would like to see putting focus on Java code. Here is an example of LiquidCrystal in Java 'gallerie:avr.gallerie.user.cvdenzen.arduino.libraries.liquidcrystal.LiquidCrystal'.
+
+Second: smooth interfacing with C++ objects is not supported yet, neither is annotation @NativeCppMethod (today sadly it's just a noop). It's in an experimental stage. See my experiments in:
+examples:arduino.tutorial.NativeCVariableEnhanced
+myCProject:/tutorials/NativeCVariableClass.cpp
+
+"
+I assume the used mechanism (cConstructor / cobject) maps any methods with the same signature to the corresponding method of the c++ instance, is that correct?
+"
+Not quite right. You are expecting to much magic. You have to look at it thru Java glasses, like HaikuVM does. Please take a look at this tutorials: http://haiku-vm.sourceforge.net/#[[Tutorial%20JNI]]
+
+1. Sadly cConstructor / cobject have no meaning for HaikuVM!
+2. Sadly until today annotation @NativeCppMethod is a noop.
+3. When using attribute **native**, HaikuVM only generates empty JNI C code blueprints into file 'haikuJNI.c'. You have to cut&past them into your C files and fill out the gap (See '// TODO: insert your code here' in the function body below).
+
+~~~~~~
+############## Java
+private native static Object cConstructor(int dataPin, int clkPin, int csPin, int numDevices);
+
+############## HaikuVM for you in haikuJNI.c
+JNIEXPORT jobject Java_avr_gallerie_user_bachiander_LedControl_cConstructor JNICALL
+  (JNIEnv *env, jclass obj, jint arg1, jint arg2, jint arg3, jint arg4)
+{
+    // TODO: insert your code here
+    return NULL;
+}
+~~~~~~
+
+4. You get more out of HaikuVM and closer to what you want, if you use the supported annotation **@NativeCppFunction**. Now HaikuVM fills out the gap with some **default C code** and puts the whole thing into file 'nativeCFunctions.cpp'.
+
+~~~~~~
+############## Java
+@NativeCppFunction
+private native static Object cConstructor(int dataPin, int clkPin, int csPin, int numDevices);
+
+############## HaikuVM for you in nativeCFunctions.cpp
+JNIEXPORT jobject Java_avr_gallerie_user_bachiander_LedControl_cConstructor
+  (JNIEnv *env, jclass obj, jint arg1, jint arg2, jint arg3, jint arg4)
+{
+    return cConstructor(arg1, arg2, arg3, arg4);
+}
+~~~~~~
+
+5. This is still not what you want. Because C function 'cConstructor(arg1, arg2, arg3, arg4)' is undefined. What you really want is to call the constructor of the C class 'LedControl'. You can overwrite the default C code by using member **cImpl** of annotation **@NativeCppFunction**. This enables you to merge your own C code into the generated file 'nativeCFunctions.cpp'.
+
+~~~~~~
+############## Java
+@NativeCHeader(cImpl = "#include <LedControl.h>")
+public class LedControl {
+...
+@NativeCppFunction(cImpl = "return (jobject) new LedControl(arg1, arg2, arg3, arg4);")
+private native static Object cConstructor(int dataPin, int clkPin, int csPin, int numDevices);
+
+############## HaikuVM for you in nativeCFunctions.cpp
+//////////////////Start of user code given per Java class by cImpl
+#include <LedControl.h>
+//////////////////End   of user code given per Java class by cImpl
+...
+JNIEXPORT jobject Java_avr_gallerie_user_bachiander_LedControl_cConstructor
+  (JNIEnv *env, jclass obj, jint arg1, jint arg2, jint arg3, jint arg4)
+{
+//////////////////Start of user code given by cImpl
+return (jobject) new LedControl(arg1, arg2, arg3, arg4);
+//////////////////End   of user code given by cImpl
+}
+~~~~~~
+
+6. Now, when we focus for example on method setLed(..) it becomes ugly. Because if you want to call the setLed(..) C++ member method, you have the need to access the Java field cobject to reach your C++ object. This in turn means you have to mess around with a lot of JNI stuff. (Which HaikuVM supports to some very low degree.)
+
+~~~~~~
+############## Java
+@NativeCHeader(cImpl = 
+	"#include <LedControl.h>\n"+
+	"typedef struct avr_gallerie_user_bachiander_LedControl {\n"+
+	"  jobject    cobject; //Ljava/lang/Object;\n"+
+	"} avr_gallerie_user_bachiander_LedControl;")
+public class LedControl {
+...
+@NativeCppFunction(cImpl = 
+	"#define cls avr_gallerie_user_bachiander_LedControl\n" +
+	"jfieldID fid = (*env)->GetFieldID(env, cls, cobject, \"Ljava/lang/Object;\");\n" +
+	"if (fid == 0)\n" +
+	"    return;\n" +
+	"LedControl* cobj = (LedControl*)((*env)->GetObjectField(env, obj, fid));\n" +
+	"cobj -> setLed(arg1, arg2, arg3, arg4);")
+public native void setLed(int addr, int row, int col, boolean state);
+
+############## HaikuVM for you in nativeCFunctions.cpp
+//////////////////Start of user code given per Java class by cImpl
+#include <LedControl.h>
+typedef struct avr_gallerie_user_bachiander_LedControl {
+  jobject    cobject; //Ljava/lang/Object;
+} avr_gallerie_user_bachiander_LedControl;
+//////////////////End   of user code given per Java class by cImpl
+...
+JNIEXPORT void Java_avr_gallerie_user_bachiander_LedControl_setLed
+  (JNIEnv *env, jobject obj, jint arg1, jint arg2, jint arg3, jboolean arg4)
+{
+//////////////////Start of user code given by cImpl
+#define cls avr_gallerie_user_bachiander_LedControl
+jfieldID fid = (*env)->GetFieldID(env, cls, cobject, "Ljava/lang/Object;");
+if (fid == 0)
+    return;
+LedControl* cobj = (LedControl*) ((*env)->GetObjectField(env, obj, fid));
+cobj -> setLed(arg1, arg2, arg3, arg4);
+//////////////////End   of user code given by cImpl
+}
+~~~~~~
+
+
+"
+Where need the .h/.cpp files to be placed to get picked up?
+"
+For an answer see: http://haiku-vm.sourceforge.net/#[[JNI%20enhanced]]
+Short answer: anywhere in your myCProject folder *OR* In the same folder as your main java (So you are on the right track).
+
+In you C code I found some undefined things like:
+pinMode(..)
+spiTransfer(..)
+or even #include <Arduino.h>
+From this I guess you want to step and compile against the Arduino library by using the Arduino IDE. This can be done with HaikuVM by using the configuration **arduinoIDEUpload** and haikufying like this:
+
+~~~~~~
+cd <YourArduinoIDEHOME>/libraries
+/../haikuVM/bin/haiku -v --Config arduinoIDEUpload /../projects/src/LEDMatrix/$LEDMatrix.java
+~~~~~~
+
+
+Maybe this thread is of some help for you:
+https://sourceforge.net/p/haiku-vm/discussion/general/thread/25b657d8/
+
+
+
+
+In the past I prepared an article about HaikuVM for the javamagazin, which ate up my spare time. Trying to make HaikuVM more popular.
+
+Now, back to your post:
+1) You are on the right track: As a first step I would love to resemble the original LiquidCrystal-HelloWorld example like this as well:
+
+~~~~~~
+public class HelloWorld {
+    static private LiquidCrystal lcd = new LiquidCrystal(12, 11, 5, 4, 3, 2);
+    // DFRobot shield
+    //static private LiquidCrystal lcd = new LiquidCrystal(8, 9, 4, 5, 6, 7);
+
+    void setup() {
+        // set up the LCD's number of columns and rows:
+        lcd.begin(16, 2);
+        // Print a message to the LCD.
+        lcd.print("hello, world!");
+    }
+
+    void loop() {
+        // set the cursor to column 0, line 1
+        // (note: line 1 is the second row, since counting begins with 0):
+        lcd.setCursor(0, 1);
+        // print the number of seconds since reset:
+        lcd.print(millis() / 1000);
+    }
+}
+~~~~~~
+
+2) This is my alternative track: Why copy *all* the source?
+Just copy 'arduino-1.0.2\libraries\LiquidCrystal'. For the rest use 'haikuVM-1.0.3\lib\clibs\libleonardo.a'. (Official version of haikuVM-1.0.3 - including Leonardo support - is comming soon.)
+
+3) You are not on the right track: Why copy into 'haikuVM-1.0.3\haikuVM'?
+Doing so will "pollute" the source of the Haiku VM itself. In my understanding, LiquidCrystal is just another project. So, copy into 'haikuVM-1.0.3\myCProject\LiquidCrystal' would be right.
+
+4) Instead of mimic the LiquidCrystal.cpp one-to-one in LiquidCrystal.java I would make shortcuts by using JNI roughly like this:
+
+~~~~~~
+public class LiquidCrystal extends Print {
+    public LiquidCrystal(int rs, int enable, int d0, int d1, int d2, int d3) {
+        constructor(rs, enable, d0, d1, d2, d3);
+    }
+    public static native constructor(int rs, int enable, int d0, int d1, int d2, int d3);
+    @Override
+    public native byte write(byte c);
+    public native void begin(int cols, int rows);
+    public native void setCursor(int col, int row);
+}
+~~~~~~
+Implementing this 4 native functions in C is easy when assuming that only one single instance of a LCD is instantiated per runtime.
+
+
+What do you think about this roadmap? Any critics?

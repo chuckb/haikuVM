@@ -1,0 +1,1049 @@
+TODO: vor der Veröffentlichung:
+1) structs
+Ohne class und allocsize.
+Idee: JAVA Klassen sollen sich auf reale/vorhandene C Objekte abbilden lassen.
+Ziel: haikuVM selbst läßt sich in (haiku-)JAVA 1:1 abbilden und codieren. z.B.:
+  typedef struct {...} ByteCode;
+  typedef struct {...} msg2meth_t;
+Lösung1:
+Statt:
+	typedef struct {
+		heapControl;
+		struct {
+			jbyteArray chars;	//[B
+		} user;
+	} java_lang_String;
+Anders:
+	typedef struct {
+		jbyteArray chars;	//[B
+	} java_lang_String;
+
+	typedef struct {
+		heap_t heap;
+		java_lang_String user;
+	} java_lang_String_ONHEAP;
+
+11) INVOKEVIRTUAL untersuchen
+
+14) Options
+-f) flat directory structure behind ./haikuVM
+
+15) usage:
+javac -m.. -b..
+haikufy  -m.. -D(b)..
+(cross) compile & link (WINAVR etc.) -m.. -D(b)..
+transfer (avrdude. asuroflash)
+
+17) beware of float/double usage in 16 bit mode. Better: use 16Bit float.
+
+19) Wie läßt sich mit der LeJOS Library leben?
+(Idee: Mapping von natives to JAVA calls)
+
+20) Performance
+a) threaded code (bytecode->foo address)
+b) without array bound checks
+c) inlined foos
+d) meta bytecode (combine 2 or more bytecodes into one new meta bytecode)
+
+21) direct memory access via java arrays (byte HaikuMagic.memBYTE[], int HaikuMagic.memWORD[])
+(Problems with emulation on SUNs JAVA.)
+see http://www.rtsj.org/specjavadoc/javax/realtime/RawMemoryAccess.html
+
+
+23) class-Problem: SomeClass.class.wait()
+
+24) Idee
+Final Kaskade, ausgehend vom Mainthread. Objekte die als final gekennzeichnet 
+sind können schon zur Compilezeit angelegt werden. Am Besten direkt im Heap anlegen
+damit der GC aufräumen kann wenn z.B. mainThread zu Ende geht.
+
+25) Idee
+Spezielles LDC für Sonderwerte wie Integer.MAX_VALUE, Double.MIN_NORMAL um sich an HAIKU_Mode an zu passen:
+32 Bit -> Integer.MAX_VALUE=0x7fffffff;
+16 Bit -> Integer.MAX_VALUE=0x7fff;
+
+26a) Hängt auch Haiku?
+http://lejos.sourceforge.net/forum/viewtopic.php?f=7&t=3352&sid=e798adc6ab8edde111087dd062498bc9
+A signed 32-bit timer with millisecond resolution would indeed overflow after about 3 weeks.
+3 weeks, 3 days, 20 hours, 31 minutes, ~23.6 seconds. Does this match your observations?
+ 31Bit entsprechen <25 Tage (ca. 3 weeks).
+ 32Bit entsprechen <49.71 Tage (ca. 7 weeks). Also kleine Verbesserung.
+
+
+29) Probleme mit float16
+a) Math.random() liefert zu oft 0 wg. underflow Häufigkeit
+b) Float/Double.POSITIVE_INFINITY
+	- String.valueOf(float/double)
+
+32) Idee Filesystem (similar to leJOS)
+Kopie from pc via
+-ro <pc-directory-to-AVR-flash-/cdrom1>
+-rw  <pc-directory-to-AVR-RAM-/>
+
+33) HaikuMagic bekommt: boolean exceptionHandler(Throwable)
+
+34) Size Optimierungen
+a) Methoden de-virtualisieren wenn klar ist das nur sie gemeint sein können. Spart Platz in Class struct.
+b) bei postfix-Gleichheit abschneiden durch Methodenübergreifendes goto.
+
+36) static field inheritance
+is not solved for any case. (Stichwort: Schrägeinstieg)
+
+37) line.separator
+should use System.getProperty("line.separator")
+
+38) System.getProperty("line.separator")
+Der Methodenaufruf System.getProperty(const-string) wird im Code (zur Compilezeit) substituiert durch 
+den (plattformspezifischen) Resultatstring. (Hier "\r\n".)
+
+
+39) Performance by JIT (a sketch)
+/*
+public class haikuvm.bench.Fibonacci32Bit extends java.lang.Object
+filename		..\haikuBench\bin/haikuvm/bench/Fibonacci32Bit.class
+compiled from		Fibonacci32Bit.java
+compiler version	50.0
+access flags		33
+constant pool		72 entries
+ACC_SUPER flag		true
+
+Attribute(s):
+	SourceFile(Fibonacci32Bit.java)
+
+3 methods:
+	public void <init>()
+	static int fib(int n)
+	public static void main(String[] args)
+
+*/
+
+
+#include "haikuC/haikuConfig.h"
+//                  haikuvm/bench/Fibonacci32Bit
+#include "haikuJava/haikuvm/bench/Fibonacci32Bit.h"
+//                  java/lang/Object
+#include "haikuJava/java/lang/Object.h"
+//                  java/lang/System
+#include "haikuJava/java/lang/System.h"
+//                  java/lang/StringBuilder
+#include "haikuJava/java/lang/StringBuilder.h"
+//                  java/io/PrintStream
+#include "haikuJava/java/io/PrintStream.h"
+
+/**
+static int fib(int n)
+Code(max_stack = 3, max_locals = 1, code_length = 21)
+*/
+#undef  JMETHOD
+#define JMETHOD haikuvm_bench_Fibonacci32Bit_fib_II
+const           haikuvm_bench_Fibonacci32Bit_fib_II_t JMETHOD PROGMEM ={
+3+1 +2,    0,    1,    // max_stack, purLocals, purParams
+
+OP_ILOAD_0,                                                            // 0:    iload_0
+OP_ICONST_2,                                                           // 1:    iconst_2
+OP_IF_ICMPGE,        TARGET(7),                                        // 2:    if_icmpge		#7
+OP_ICONST_1,                                                           // 5:    iconst_1
+OP_IRETURN,                                                            // 6:    ireturn
+OP_ILOAD_0,                                                            // 7:    iload_0
+OP_ICONST_2,                                                           // 8:    iconst_2
+OP_ISUB,                                                               // 9:    isub
+OP_INVOKESHORT_haikuvm_bench_Fibonacci32Bit_fib_II,                    // 10:   invokestatic	haikuvm.bench.Fibonacci32Bit.fib (I)I (16)
+OP_ILOAD_0,                                                            // 13:   iload_0
+OP_ICONST_1,                                                           // 14:   iconst_1
+OP_ISUB,                                                               // 15:   isub
+OP_INVOKESHORT_haikuvm_bench_Fibonacci32Bit_fib_II,                    // 16:   invokestatic	haikuvm.bench.Fibonacci32Bit.fib (I)I (16)
+OP_IADD,                                                               // 19:   iadd
+OP_IRETURN,                                                            // 20:   ireturn
+};
+
+OP_INVOKEINLINE code0
+OP_IF_ICMPGE,        TARGET(7),                                        // 2:    if_icmpge		#7
+OP_INVOKEINLINE code5
+OP_INVOKEINLINE code7
+OP_INVOKEINLINE code13
+OP_INVOKEINLINE code19
+
+#define BEGCODE(x)  bc=x; {
+#define ENDCODE     };
+
+
+code0:
+// 0:    iload_0
+BEGCODE(OP_ILOAD_0)
+	pushTop();
+	top.s1.i=lsp[bc&7].i;
+ENDCODE
+// 1:    iconst_2
+BEGCODE(OP_ICONST_2)
+	pushTop();
+	top.s1.i=(bc&7);
+ENDCODE
+goto loop;
+
+
+code5:
+// 5:    iconst_1
+BEGCODE(OP_ICONST_1)
+	pushTop();
+	top.s1.i=(bc&7);
+ENDCODE
+// 6:    ireturn
+BEGCODE(OP_IRETURN)
+	areturn();
+ENDCODE
+goto loop;
+
+code7:
+// 7:    iload_0
+BEGCODE(OP_ILOAD_0)
+	pushTop();
+	top.s1.i=lsp[bc&7].i;
+ENDCODE
+// 8:    iconst_2
+BEGCODE(OP_ICONST_2)
+	pushTop();
+	top.s1.i=(bc&7);
+ENDCODE
+// 9:    isub
+BEGCODE(OP_ISUB)
+	top.s1.i=ipop()-top.s1.i;
+ENDCODE
+// 10:   invokestatic	haikuvm.bench.Fibonacci32Bit.fib (I)I (16)
+BEGCODE(OP_INVOKESHORT_haikuvm_bench_Fibonacci32Bit_fib_II)
+	invoke(pgm_read_wordRef(*(functionTable+bc)));
+ENDCODE
+goto loop;
+
+
+code13:
+OP_ILOAD_0,                                                            // 13:   iload_0
+OP_ICONST_1,                                                           // 14:   iconst_1
+OP_ISUB,                                                               // 15:   isub
+OP_INVOKESHORT_haikuvm_bench_Fibonacci32Bit_fib_II,                    // 16:   invokestatic	haikuvm.bench.Fibonacci32Bit.fib (I)I (16)
+
+code19:
+OP_IADD,                                                               // 19:   iadd
+OP_IRETURN,                                                            // 20:   ireturn
+
+
+const class_t haikuvm_bench_Fibonacci32Bit__class PROGMEM = {
+	& java_lang_Object__class,
+	sizeof(haikuvm_bench_Fibonacci32Bit),
+	0,
+};
+
+40) use more warning flags like:
+-W -Wall -Wextra -Wundef -Wunreachable-code -Wstrict-prototypes -Winit-self 
+
+43) Is -D <option> still working
+
+45) Optimizer
+45.1) use Proguard for bytecode optimization
+45.2) use direct threading for speed:
+Every Bytecode *is* the label. So no map (bytecode -> label) is needed.
+
+46) Debug Strings
+move into new file haikuDebug.[ch]
+
+47) StringsConstants are ROM only.
+This is: charArrayConstants are ROM only
+
+49) rename throwException -> exceptionHandler
+
+51) Compacting GC
+
+53) Monitor/Console 
+
+54) Doc: Intro Picture
+
+55) alternative support for GNU ClassPath runtime library (today its leJOS)
+
+56) classpath reflects target (chain)
+ "%%NXJ_HOME%%\lib\haikuvm";"%%NXJ_HOME%%\lib\nxt"
+E.g. if target is arduino we will have 
+ "%%NXJ_HOME%%\lib\haikuvm\arduino";"%%NXJ_HOME%%\lib\haikuvm\avr";"%%NXJ_HOME%%\lib\haikuvm\root4c";"%%NXJ_HOME%%\lib\haikuvm\root";"%%NXJ_HOME%%\lib\nxt"
+Because arduino ->(extends) avr -> root4c -> root
+ 
+57) for Google: keyword in HEAD tag
+
+58) PROGMEM and copy-on-write
+
+59) inline C code
+a)
+@NativeCFunction und @NativeCPPFunction sind gute Startpunkte.
+Schön wäre, wenn man in JAVA auch direkt inline C Code schreiben könnte.
+	void int add(int a, int b) {
+		@inline(
+			"int c;\n"+
+			"c=arg1+arg2;\n"
+		@inline(
+			"return c;"
+		)
+	}
+
+60) Netbeans support
+
+61) Arduino properties Datei funktioniert auch
+
+
+
+65) Idea: Speed optimization by translating this 
+ #define JMETHOD java_lang_String_length_I
+ const           java_lang_String_length_I_t JMETHOD PROGMEM ={
+  1+1 +2,    0,    1,    // max_stack, purLocals, purParams
+
+  OP_ALOAD_0,                                                            // 0:    aload_0
+  OP_GETFIELD_L,       FIDX(java_lang_String, characters),               // 1:    getfield		java.lang.String.characters [C (17)
+  OP_ARRAYLENGTH,                                                        // 4:    arraylength
+  OP_IRETURN,                                                            // 5:    ireturn
+ };
+into this
+ void java_lang_String_length_I(void) {
+  initStack(1+1 +2,    0,    1);    // max_stack, purLocals, purParams
+  pc = op0_java_lang_String_length_I;
+ }
+ void op0_java_lang_String_length_I(void) {
+  BEGCODE(ALOAD_0)
+	pushTop();
+	top.s1=getLocal(bc&7)->s0;
+	setMarkBit(top.s1.a);
+  ENDCODE
+  {
+   struct {
+      OP_16;
+   } PROGMEM param = {FIDX(java_lang_String, characters)};
+   pc_param = &param;
+  }
+  BEGCODE(GETFIELD_L)
+	top.s1.a=*(jobject*)getField();
+	setMarkBit(top.s1.a);
+  ENDCODE
+//pc = op2_java_lang_String_length_I;
+//}
+//
+//void op2_java_lang_String_length_I(void) {
+  BEGCODE(ARRAYLENGTH)
+	top.s1.i=top.s1.ay->length;
+  ENDCODE
+  BEGCODE(IRETURN)
+	areturn();
+  ENDCODE
+ }
+
+
+65) PIC controller
+Guter Einstieg : http://www.sprut.de/
+Programm für Brenner: http://www.sprut.de/electronic/soft/pbrenner/pbrenner2.htm
+Entwicklungsprogramm: MPLAB von http://www.microchip.com/
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+DONE /////////////////////////////////////////////////////
+
+63) Arduino IDE integration
+HaikuVM tools are building an arduino sketch with
+  setup()
+  loop()
+so, producing Arduino IDE compatible C/C++ code.
+
+64) fix bug: javac for user-main only
+What is needed:
+a) javac user-main
+b) javac user-microkernel
+c) javac user-properties (optional)
+To get rid of precompiled:
+bootstrap.jar, examples.jar, haikuRT.jar
+
+
+62) Automatische Bestimmung der RAM Größe
+
+48) Is it JNI standard? -> yes
+
+50) support for ordinary GCC too (in addition to avr-gcc)
+
+52) version should be given by any output.
+
+44) timer & millis
+Device independent
+ 
+42) haiku.bat
+stop on error
+
+41) haiku.bat
+linewise (not charwise)
+
+35) Namespace collision
+Problem: Benutzer nennt ein Feld COM1A0. Das ist aber ein AVR Makro. Dann knallts :-(.
+Lösung: suffix
+
+30) Nicht alle Dateien (hier robot/asuro/FollowLine.h) werden gelöscht
+Doch! Aber in BenchmarkPicker ist (wg. in xmain(..) ):
+ ..
+ 26)CONSTANT_Class[7](name_index = 27)
+ 27)CONSTANT_Utf8[1]("robot/asuro/FollowLine")
+ ..
+
+31) #include Widerspruch by clinit
+
+28) java.lang.ArithmeticException: / by zero
+
+18) prevent overflow (>256 entries) of bytecodeLabels because of to many INVOKESHORTs
+
+27) auto
+Angaben in der Properties Datei berechnen.
+-> Erst mal weg gelassen.
+
+26b) Hängt auch Haiku?
+	goonTime/millis(): jlong -> jmillis (is unsigned and one Bit more)
+obwohl ... folgende Unsymetrie wäre dann tödlich:
+	typedef int16_t jlong;
+	typedef uint16_t julong; // see ushr
+	typedef uint32_t jmillis;
+jetzt jmillis abgeschafft und julong genutzt.
+
+14) Options
+-m) supporting machine architecture -m
+-m atmega8 (16Bit, 1k RAM)
+-m atmega328p (16Bit, 2k RAM)
+-m win32  (32Bit, unlimited RAM)
+
+-b) supporting simple manual Bit architecture
+#define HAIKU_32_64 0
+#define HAIKU_16_64 1
+#define HAIKU_32_32 2
+#define HAIKU_16_32 3
+#define HAIKU_16_16 4
+
+// Experimental beware ldc_jstring_t.length in ldc()
+#define HAIKU_8_16  5
+#define HAIKU_8_8   6
+
+6) Array bound checks
+
+22) MONITORENTER MONITORLEAVE
+
+16) Memory
+statics[] und heap[] müssen summarisch berücksichtigt werden
+
+19) support of char in 1 byte and 2 byte size
+#define HAIKU_CHAR_1   1 // usefull for mc with small mem sizes
+#define HAIKU_CHAR_2   2 // default like in JAVA
+DONE in r79
+
+12) weitere Restrukturierung
+C-code:
+./haikuJava -> linked classes from JAVA
+./haikuC -> some C files and constants for the VM
+(./haikuVM -> for complete VM C code)
+./ -> your native C-code (eg. Main.c)
+
+5) ASURO Robot Program
+Ein Linienfolger.
+DONE in r76
+
+13) renaming
+nano|pico -> haiku
+DONE in r75
+
+2) class
+Ein JAVA Microbench/Beispiel mit class.
+DONE in r58
+
+8) synchronized support
+But without effect. MONITORENTER/-EXIT are noops.
+DONE in r58
+
+10) readbyte
+DONE in r58
+
+
+7) Exception support
+DONE in r53
+7a) dataSp = lsp+purParams+purLocals       nach athrow
+DONE in r55
+
+
+9) multidimensionale Arrays
+DONE in r46
+
+3) Little endian bytecode words (indexes)
+DONE in r34
+
+4) Inlined bytecode adresses
+Z.zt. werden bytecode Addressen indirekt aufgelöst. Die Addresse (das Word) ist ein Index in ConstPool.
+Idee: Statt Index direkt die Addresse im Bytecode ablegen.
+Lösung: Jede Bytecode Methode implementiert einen spezifischen typedef.
+Beachten: Lösung muss stark Makrounterstützt sein damit WIN32 nicht abgehängt wird.
+Für WIN32 muss nämlich die alte Lösung bleiben denn Addressen sind dort 4 Byte lang.
+DONE in r40
+DONE in r43 here: WIN32 Lösung geht auch symetrisch.
+
+
+//////////////////////////////////////////////////////////
+r180
+Test=1 fib(20)16Bit: (Fibonacci)
+Program:    4886 bytes (14.9% Full)
+Data:       1566 bytes (76.5% Full)
+Elapsed time 4606 msec
+
+
+Test=Fibonacci32Bit (32/64)
+Program:   19636 bytes (59.9% Full)
+Data:       1834 bytes (89.6% Full)
+Fibonacci of 0 is 1 in 99 ms
+Fibonacci of 1 is 1 in 163 ms
+Fibonacci of 2 is 2 in 229 ms
+Fibonacci of 3 is 3 in 293 ms
+Fibonacci of 4 is 5 in 354 ms
+Fibonacci of 5 is 8 in 420 ms
+Fibonacci of 6 is 13 in 484 ms
+Fibonacci of 7 is 21 in 562 ms
+Fibonacci of 8 is 34 in 636 ms
+Fibonacci of 9 is 55 in 713 ms
+Fibonacci of 10 is 89 in 815 ms
+Fibonacci of 11 is 144 in 912 ms
+Fibonacci of 12 is 233 in 1026 ms
+Fibonacci of 13 is 377 in 1181 ms
+Fibonacci of 14 is 610 in 1360 ms
+Fibonacci of 15 is 987 in 1598 ms
+Fibonacci of 16 is 1597 in 1943 ms
+Fibonacci of 17 is 2584 in 2432 ms
+Fibonacci of 18 is 4181 in 3173 ms
+Fibonacci of 19 is 6765 in 4312 ms
+Fibonacci of 20 is 10946 in 6084 ms
+Fibonacci of 21 is 17711 in 8912 ms
+Fibonacci of 22 is 28657 in 13429 ms
+Fibonacci of 23 is 46368 in 20669 ms
+Fibonacci of 24 is 75025 in 32314 ms
+Fibonacci of 25 is 121393 in 51088 ms
+Fibonacci of 26 is 196418 in 81401 ms
+Fibonacci of 27 is 317811 in 130386 ms
+Fibonacci of 28 is 514229 in 209579 ms
+Fibonacci of 29 is 832040 in 337641 ms
+Fibonacci of 30 is 1346269 in 544781 ms
+Elapsed time 544843 msec
+
+Test=5 JUnits 32/32Bit
+Program:   29664 bytes
+Data:       1840 bytes (89.8% Full)
+Elapsed time 384003 msec
+
+
+//////////////////////////////////////////////////////////
+r91
+Test=Fibonacci32Bit (32/64)
+Program:   16654 bytes
+
+Fibonacci of 0 is 1 in 81 ms
+Fibonacci of 1 is 1 in 134 ms
+Fibonacci of 2 is 2 in 185 ms
+Fibonacci of 3 is 3 in 246 ms
+Fibonacci of 4 is 5 in 309 ms
+Fibonacci of 5 is 8 in 368 ms
+Fibonacci of 6 is 13 in 433 ms
+Fibonacci of 7 is 21 in 503 ms
+Fibonacci of 8 is 34 in 574 ms
+Fibonacci of 9 is 55 in 646 ms
+Fibonacci of 10 is 89 in 726 ms
+Fibonacci of 11 is 144 in 832 ms
+Fibonacci of 12 is 233 in 935 ms
+Fibonacci of 13 is 377 in 1058 ms
+Fibonacci of 14 is 610 in 1223 ms
+Fibonacci of 15 is 987 in 1456 ms
+Fibonacci of 16 is 1597 in 1768 ms
+Fibonacci of 17 is 2584 in 2234 ms
+Fibonacci of 18 is 4181 in 2927 ms
+Fibonacci of 19 is 6765 in 4000 ms
+Fibonacci of 20 is 10946 in 5704 ms
+Fibonacci of 21 is 17711 in 8393 ms
+Fibonacci of 22 is 28657 in 12685 ms
+Fibonacci of 23 is 46368 in 19598 ms
+Fibonacci of 24 is 75025 in 30707 ms
+Fibonacci of 25 is 121393 in 48641 ms
+Fibonacci of 26 is 196418 in 77601 ms
+Fibonacci of 27 is 317811 in 124387 ms
+Fibonacci of 28 is 514229 in 200029 ms
+Fibonacci of 29 is 832040 in 322365 ms
+Fibonacci of 30 is 1346269 in 520254 ms
+Elapsed time 520319 msec
+(Mit korrigierter Zeitmessung (siehe r147) sind das 545294 msec.)
+
+//////////////////////////////////////////////////////////
+r86
+Test=Fibonacci32Bit (32/64)
+Program:   16668 bytes
+
+Fibonacci of 0 is 1 in 82 ms
+Fibonacci of 1 is 1 in 137 ms
+Fibonacci of 2 is 2 in 188 ms
+Fibonacci of 3 is 3 in 251 ms
+Fibonacci of 4 is 5 in 315 ms
+Fibonacci of 5 is 8 in 378 ms
+Fibonacci of 6 is 13 in 447 ms
+Fibonacci of 7 is 21 in 518 ms
+Fibonacci of 8 is 34 in 591 ms
+Fibonacci of 9 is 55 in 676 ms
+Fibonacci of 10 is 89 in 757 ms
+Fibonacci of 11 is 144 in 847 ms
+Fibonacci of 12 is 233 in 957 ms
+Fibonacci of 13 is 377 in 1085 ms
+Fibonacci of 14 is 610 in 1265 ms
+Fibonacci of 15 is 987 in 1490 ms
+Fibonacci of 16 is 1597 in 1808 ms
+Fibonacci of 17 is 2584 in 2288 ms
+Fibonacci of 18 is 4181 in 2991 ms
+Fibonacci of 19 is 6765 in 4101 ms
+Fibonacci of 20 is 10946 in 5827 ms
+Fibonacci of 21 is 17711 in 8579 ms
+Fibonacci of 22 is 28657 in 12960 ms
+Fibonacci of 23 is 46368 in 20015 ms
+Fibonacci of 24 is 75025 in 31366 ms
+Fibonacci of 25 is 121393 in 49664 ms
+Fibonacci of 26 is 196418 in 79231 ms
+Fibonacci of 27 is 317811 in 127000 ms
+Fibonacci of 28 is 514229 in 204233 ms
+Fibonacci of 29 is 832040 in 329120 ms
+Fibonacci of 30 is 1346269 in 531134 ms
+Elapsed time 531185 msec
+
+//////////////////////////////////////////////////////////
+r78
+Test=1 fib(20)16Bit: (Fibonacci)
+fast Dispatch:
+Program:    5180 bytes (15.8% Full)
+Elapsed time 4555 msec
+
+Viel passiert. Nehme an die Verschlechterung
+in size kommt von Init(..) und darin set baudrate in JAVA (r60)
+in speed kommt von write(..) in JAVA.
+
+
+//////////////////////////////////////////////////////////
+r60
+
+GeneralBench 1.2
+IterationTime= 7983 msec
+  200000 byte add:                       6053 ms      33041 ops/sec
+  200000 byte sub:                       6029 ms      33172 ops/sec
+  200000 byte mul:                       6607 ms      30270 ops/sec
+  200000 byte div:                      13490 ms      14825 ops/sec
+IterationTime= 7984 msec
+  200000 short add:                      6028 ms      33178 ops/sec
+  200000 short sub:                      6004 ms      33311 ops/sec
+  200000 short mul:                      6582 ms      30385 ops/sec
+  200000 short div:                     13464 ms      14854 ops/sec
+IterationTime= 7985 msec
+  200000 char add:                       6051 ms      33052 ops/sec
+  200000 char sub:                       6028 ms      33178 ops/sec
+  200000 char mul:                       6605 ms      30280 ops/sec
+  200000 char div:                      13344 ms      14988 ops/sec
+IterationTime= 7983 msec
+  200000 int add:                        5583 ms      35823 ops/sec
+  200000 int sub:                        5560 ms      35971 ops/sec
+  200000 int mul:                        6137 ms      32589 ops/sec
+  200000 int div:                       13020 ms      15360 ops/sec
+IterationTime= 7984 msec
+  200000 long add:                      10697 ms      18696 ops/sec
+  200000 long sub:                      10673 ms      18738 ops/sec
+  200000 long mul:                      19950 ms      10025 ops/sec
+  200000 long div:                      17026 ms      11746 ops/sec
+IterationTime= 7984 msec
+  200000 float add:                     15991 ms      12507 ops/sec
+  200000 float sub:                     16509 ms      12114 ops/sec
+  200000 float mul:                     27915 ms       7164 ops/sec
+  200000 float div:                     21527 ms       9290 ops/sec
+IterationTime= 7985 msec
+  200000 double add:                    18805 ms      10635 ops/sec
+  200000 double sub:                    19347 ms      10337 ops/sec
+  200000 double mul:                    30730 ms       6508 ops/sec
+  200000 double div:                    24364 ms       8208 ops/sec
+IterationTime= 7983 msec
+  200000 method calls:                   7064 ms      28312 ops/sec
+IterationTime= 7984 msec
+  200000 static method calls:            5523 ms      36212 ops/sec
+IterationTime= 7985 msec
+  200000 native static method calls:        1 ms  200000000 ops/sec
+IterationTime= 80 msec
+
+
+//////////////////////////////////////////////////////////
+r59 -> INVOKESHORT
+
+Test=1 fib(20)16Bit: (Fibonacci) -> speed record!
+fast Dispatch:
+Program:    4978 bytes (15.2% Full)
+Elapsed time 4298 msec
+
+
+Test=Fibonacci32Bit (32/64)
+Program:   16668 bytes (50.9% Full)
+Data:       1838 bytes (89.7% Full)
+
+Fibonacci of 0 is 1 in 72 ms
+Fibonacci of 1 is 1 in 117 ms
+Fibonacci of 2 is 2 in 178 ms
+Fibonacci of 3 is 3 in 240 ms
+Fibonacci of 4 is 5 in 295 ms
+Fibonacci of 5 is 8 in 351 ms
+Fibonacci of 6 is 13 in 411 ms
+Fibonacci of 7 is 21 in 479 ms
+Fibonacci of 8 is 34 in 544 ms
+Fibonacci of 9 is 55 in 610 ms
+Fibonacci of 10 is 89 in 682 ms
+Fibonacci of 11 is 144 in 766 ms
+Fibonacci of 12 is 233 in 871 ms
+Fibonacci of 13 is 377 in 994 ms
+Fibonacci of 14 is 610 in 1151 ms
+Fibonacci of 15 is 987 in 1372 ms
+Fibonacci of 16 is 1597 in 1693 ms
+Fibonacci of 17 is 2584 in 2151 ms
+Fibonacci of 18 is 4181 in 2840 ms
+Fibonacci of 19 is 6765 in 3922 ms
+Fibonacci of 20 is 10946 in 5608 ms
+Fibonacci of 21 is 17711 in 8301 ms
+Fibonacci of 22 is 28657 in 12588 ms
+Fibonacci of 23 is 46368 in 19494 ms
+Fibonacci of 24 is 75025 in 30602 ms
+Fibonacci of 25 is 121393 in 48546 ms
+Fibonacci of 26 is 196418 in 77497 ms
+Fibonacci of 27 is 317811 in 124310 ms
+Fibonacci of 28 is 514229 in 199987 ms
+Fibonacci of 29 is 832040 in 322353 ms
+Fibonacci of 30 is 1346269 in 520284 ms
+Elapsed time 520344 msec
+
+
+//////////////////////////////////////////////////////////
+r58 -> label 'yield' führt zu weniger call von switchThread()
+
+Test=1 fib(20)16Bit: (Fibonacci) -> speed record!
+fast Dispatch:
+Program:    4958
+Elapsed time 4323 msec
+
+//////////////////////////////////////////////////////////
+r57 -> jstack dataSP, lsp
+Test=1 fib(20)16Bit: (Fibonacci) -> speed record!
+
+fast Dispatch:
+Program:    4928
+Elapsed time 4612 msec
+
+Test=Fibonacci32Bit (32/64)
+Program:   16654 bytes
+Data:       1838 bytes
+
+Fibonacci of 0 is 1 in 73 ms
+Fibonacci of 1 is 1 in 119 ms
+Fibonacci of 2 is 2 in 180 ms
+Fibonacci of 3 is 3 in 245 ms
+Fibonacci of 4 is 5 in 301 ms
+Fibonacci of 5 is 8 in 359 ms
+Fibonacci of 6 is 13 in 423 ms
+Fibonacci of 7 is 21 in 488 ms
+Fibonacci of 8 is 34 in 553 ms
+Fibonacci of 9 is 55 in 623 ms
+Fibonacci of 10 is 89 in 700 ms
+Fibonacci of 11 is 144 in 788 ms
+Fibonacci of 12 is 233 in 895 ms
+Fibonacci of 13 is 377 in 1022 ms
+Fibonacci of 14 is 610 in 1194 ms
+Fibonacci of 15 is 987 in 1440 ms
+Fibonacci of 16 is 1597 in 1760 ms
+Fibonacci of 17 is 2584 in 2237 ms
+Fibonacci of 18 is 4181 in 2981 ms
+Fibonacci of 19 is 6765 in 4114 ms
+Fibonacci of 20 is 10946 in 5901 ms
+Fibonacci of 21 is 17711 in 8756 ms
+Fibonacci of 22 is 28657 in 13306 ms
+Fibonacci of 23 is 46368 in 20634 ms
+Fibonacci of 24 is 75025 in 32413 ms
+Fibonacci of 25 is 121393 in 51436 ms
+Fibonacci of 26 is 196418 in 82129 ms
+Fibonacci of 27 is 317811 in 131760 ms
+Fibonacci of 28 is 514229 in 212005 ms
+Fibonacci of 29 is 832040 in 341751 ms
+Fibonacci of 30 is 1346269 in 551623 ms
+Elapsed time 551686 msec
+
+
+//////////////////////////////////////////////////////////
+r56
+Test=1 fib(20)16Bit: (Fibonacci) -> speed record!
+totalMethods=      62
+totalBClength=     849
+totalConstLength=  177
+totalClassesLength=144
+
+fast Dispatch:
+Program:    5008 bytes (15.3% Full)
+Elapsed time 5303 msec
+
+Test=2:
+totalMethods=      147
+totalBClength=     3917
+totalConstLength=  1332
+totalClassesLength=318
+
+Program:   14284 bytes (43.6% Full)
+Data:       1840 bytes (89.8% Full)
+Elapsed time 23982 msec <== Stimmt nicht 16Bit Zeit (Es dauert ca. 82sec bei 16/32 bzw. 90sec bei 32/32)
+
+
+Test=Fibonacci32Bit (32/64)
+totalMethods=      66
+totalBClength=     977
+totalConstLength=  206
+totalClassesLength=150
+Program:   16836 bytes (51.4% Full)
+Data:       1838 bytes (89.7% Full)
+
+Fibonacci of 0 is 1 in 73 ms
+Fibonacci of 1 is 1 in 126 ms
+Fibonacci of 2 is 2 in 194 ms
+Fibonacci of 3 is 3 in 263 ms
+Fibonacci of 4 is 5 in 328 ms
+Fibonacci of 5 is 8 in 389 ms
+Fibonacci of 6 is 13 in 463 ms
+Fibonacci of 7 is 21 in 540 ms
+Fibonacci of 8 is 34 in 612 ms
+Fibonacci of 9 is 55 in 695 ms
+Fibonacci of 10 is 89 in 782 ms
+Fibonacci of 11 is 144 in 882 ms
+Fibonacci of 12 is 233 in 1006 ms
+Fibonacci of 13 is 377 in 1157 ms
+Fibonacci of 14 is 610 in 1357 ms
+Fibonacci of 15 is 987 in 1618 ms
+Fibonacci of 16 is 1597 in 1997 ms
+Fibonacci of 17 is 2584 in 2554 ms
+Fibonacci of 18 is 4181 in 3412 ms
+Fibonacci of 19 is 6765 in 4734 ms
+Fibonacci of 20 is 10946 in 6820 ms
+Fibonacci of 21 is 17711 in 10130 ms
+Fibonacci of 22 is 28657 in 15443 ms
+Fibonacci of 23 is 46368 in 23965 ms
+Fibonacci of 24 is 75025 in 37704 ms
+Fibonacci of 25 is 121393 in 59881 ms
+Fibonacci of 26 is 196418 in 95712 ms
+Fibonacci of 27 is 317811 in 153602 ms
+Fibonacci of 28 is 514229 in 247218 ms
+Fibonacci of 29 is 832040 in 398626 ms
+Fibonacci of 30 is 1346269 in 643523 ms
+Fibonacci of 31 is 2178309 in 1039708 ms
+Fibonacci of 32 is 3524578 in 1680694 ms
+Fibonacci of 33 is 5702887 in 2717987 ms
+Fibonacci of 34 is 9227465 in 4397725 ms
+Fibonacci of 35 is 14930352 in 7118083 ms
+Elapsed time 7118153 msec
+
+Test=Fibonacci32Bit (32/32)
+Program:    6122 bytes (18.7% Full)
+Data:       1574 bytes (76.9% Full)
+
+
+
+
+//////////////////////////////////////////////////////////
+r52 (long/double -> 2*stack)
+Test=1 fib(20)16Bit: (Fibonacci)
+totalMethods=      58
+totalBClength=     747
+totalConstLength=  179
+totalClassesLength=88
+
+fast Dispatch:
+Program:    4830 bytes
+Elapsed time 5557 msec
+
+//////////////////////////////////////////////////////////
+r44
+Test=1 fib(20)16Bit: (Fibonacci)
+totalMethods=      56
+totalBClength=     734+
+totalConstLength=  179
+totalClassesLength=80
+
+fast Dispatch:
+Program:    4880 bytes (14.9% Full)
+Elapsed time 5900 msec
+
+//////////////////////////////////////////////////////////
+r43
+Test=1 fib(20)16Bit: (Fibonacci)
+totalMethods=      56
+totalBClength=     734+
+totalConstLength=  179
+totalClassesLength=80
+
+fast Dispatch:
+Program:    4880 bytes (14.9% Full)
+Elapsed time 5914 msec
+
+
+Test=2:
+totalMethods=      145
+totalBClength=     4092
+totalConstLength=  1531
+totalClassesLength=213
+
+//////////////////////////////////////////////////////////
+r40
+Test=1 fib(20)16Bit: (Fibonacci)
+totalMethods=      56
+totalBClength=     734
+totalConstLength=  261
+totalClassesLength=80
+
+fast Dispatch:
+Program:    5008 bytes
+Data:        790 bytes (38.6% Full)
+Elapsed time 6036 msec
+
+
+Test=2:
+totalMethods=      145
+totalBClength=     4092
+totalConstLength=  1875
+totalClassesLength=213
+
+fast Dispatch:
+Program:   15114 bytes (46.1% Full)
+
+Test=Fibonacci32Bit (32/64)
+Program:   16736 bytes (51.1% Full)
+Data:       1710 bytes (83.5% Full)
+Elapsed time 871271 msec
+
+
+//////////////////////////////////////////////////////////
+r38
+Test=1 fib(20)16Bit:
+totalMethods=      56
+totalBClength=     734
+totalConstLength=  261
+totalClassesLength=80
+
+Program:    5288 bytes (16.1% Full)
+Data:        790 bytes (38.6% Full)
+Elapsed time 6178 msec
+
+fast Dispatch:
+Program:    5024 bytes (15.3% Full)
+Data:        790 bytes (38.6% Full)
+Elapsed time 6134 msec
+
+
+
+Test=2:
+totalMethods=      145
+totalBClength=     4092
+totalConstLength=  1875
+totalClassesLength=213
+
+
+//////////////////////////////////////////////////////////
+r37
+Test=1 fib(20)16Bit:
+Program:    5764 bytes
+Data:        790 bytes (38.6% Full)
+Elapsed time 6182 msec
+
+//////////////////////////////////////////////////////////
+r36
+Test=1 fib(20)16Bit:
+Program:    5810 bytes (17.7% Full)
+Data:        790 bytes (38.6% Full)
+Elapsed time 6271 msec
+
+
+//////////////////////////////////////////////////////////
+r32
+Test=1 fib(20)16Bit:
+totalMethods=      56
+totalBClength=     734
+totalConstLength=  599
+totalClassesLength=80
+But not comparable with r30. Because r30 had a bug on counting totalBCLength.
+
+Program:    5618??? bytes (17.1% Full)
+Data:        794 bytes (38.8% Full)
+Elapsed time 6857 msec
+
+fast Dispatch:
+Program:    5592 bytes
+Elapsed time 6642 msec
+
+
+Test=2:
+totalMethods=      145
+totalBClength=     4092
+totalConstLength=  2127
+totalClassesLength=213
+But not comparable with r30. Because r30 had a bug on counting totalBCLength.
+
+//////////////////////////////////////////////////////////
+r30
+Test=1 fib(20)16Bit:
+totalBClength=     641
+totalConstLength=  599
+totalClassesLength=80
+
+avrdude: 5858 bytes of flash verified
+Elapsed time 6732 msec
+
+
+Test=2:
+totalBClength=     3855
+totalConstLength=  2127
+totalClassesLength=213
+
+
+lejosBenchmark:
+#define MINSTACK 85
+#define HEAPSIZE 1300 
+
+GeneralBench 1.2
+IterationTime= 13207 msec
+  200000 byte add:                      12592 ms      15883 ops/sec
+  200000 byte sub:                      12390 ms      16142 ops/sec
+  200000 byte mul:                      13172 ms      15183 ops/sec
+  200000 byte div:                      20054 ms       9973 ops/sec
+IterationTime= 13208 msec
+  200000 short add:                     12591 ms      15884 ops/sec
+  200000 short sub:                     12389 ms      16143 ops/sec
+  200000 short mul:                     13171 ms      15184 ops/sec
+  200000 short div:                     20203 ms       9899 ops/sec
+IterationTime= 13206 msec
+  200000 char add:                      12593 ms      15881 ops/sec
+  200000 char sub:                      12391 ms      16140 ops/sec
+  200000 char mul:                      13172 ms      15183 ops/sec
+  200000 char div:                      20054 ms       9973 ops/sec
+IterationTime= 13207 msec
+  200000 int add:                       11896 ms      16812 ops/sec
+  200000 int sub:                       11694 ms      17102 ops/sec
+  200000 int mul:                       12476 ms      16030 ops/sec
+  200000 int div:                       19509 ms      10251 ops/sec
+IterationTime= 13208 msec
+  200000 long add:                      14265 ms      14020 ops/sec
+  200000 long sub:                      14278 ms      14007 ops/sec
+  200000 long mul:                      23869 ms       8379 ops/sec
+  200000 long div:                      20908 ms       9565 ops/sec
+IterationTime= 13207 msec
+  200000 float add:                     23580 ms       8481 ops/sec
+  200000 float sub:                     23946 ms       8352 ops/sec
+  200000 float mul:                     36071 ms       5544 ops/sec
+  200000 float div:                     29176 ms       6854 ops/sec
+IterationTime= 13207 msec
+  200000 double add:                    23832 ms       8392 ops/sec
+  200000 double sub:                    24199 ms       8264 ops/sec
+  200000 double mul:                    36322 ms       5506 ops/sec
+  200000 double div:                    29428 ms       6796 ops/sec
+IterationTime= 13207 msec
+  200000 method calls:                  14654 ms      13648 ops/sec
+IterationTime= 13208 msec
+  200000 static method calls:           11108 ms      18005 ops/sec
+IterationTime= 13208 msec
+  200000 native static method calls:        1 ms  200000000 ops/sec
+IterationTime= 132 msec

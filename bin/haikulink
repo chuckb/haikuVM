@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# for OSX
+function my_resolve() {
+	if [ "${2:0:1}" == "/" ]; then
+		printf "%s" "$2"
+	elif [ "$2" == "." ]; then
+		printf "%s" "$1"
+	elif [ "$1" == "." ]; then
+		printf "%s" "$2"
+	else
+		printf "%s" "$1/$2"
+	fi
+}
+function my_readlink() {
+	local TMP1=$(dirname -- "$1")
+	local TMP2=$(readlink -- "$1")
+	my_resolve "$TMP1" "$TMP2"
+}
+function my_build_cp() {
+	local DIR="$1"
+	if [ ! -d "$DIR" ]; then
+		echo "Internal error. The following directory does not exist:" 1>&2
+		echo "  \"$DIR\""1>&2
+		return;
+	fi
+
+	local TMP_CP=$(find "$DIR" -name "*.jar" -print0 | tr "\0" "$SEP")
+	# remove last $SEP 
+	printf "%s" ${TMP_CP%?}
+}
+function set_java_and_javac() {
+	local VAR="$1"
+	JAVA="${!VAR}/bin/java"
+	JAVAC="${!VAR}/bin/javac"
+	
+	if [ ! -x "$JAVA" ]; then
+		echo "The variable $VAR does not point to the root directory" 1>&2
+		echo "of a JRE or JDK. The following file does not exist or" 1>&2
+		echo "is not executable:" 1>&2
+		echo "  \"$JAVA\"" 1>&2
+	elif [ ! -x "$JAVAC" ]; then
+		echo "The variable $VAR seems to point to the root directory" 1>&2
+		echo "of a JRE. It should point to the root directory of a JDK." 1>&2
+		echo "Otherwise, some tools might not work." 1>&2
+	fi
+}
+
+NXJ_COMMAND=$(basename -- "$0")
+NXJ_HOME="$0"
+while [ -L "$NXJ_HOME" ]; do
+	NXJ_HOME=$(my_readlink "$NXJ_HOME")
+done
+NXJ_HOME=$(dirname -- "$NXJ_HOME")
+NXJ_HOME=$(my_resolve "$(pwd)" "$NXJ_HOME")/..
+
+if [ -n "$LEJOS_NXT_JAVA_HOME" ]; then
+	set_java_and_javac LEJOS_NXT_JAVA_HOME
+elif [ -n "$JAVA_HOME" ]; then
+	set_java_and_javac JAVA_HOME
+else
+	JAVA="java"
+	JAVAC="javac"
+fi
+
+SEP=":"
+NXJ_FORCE32=""
+
+case $(uname -s) in
+	CYGWIN*) SEP=";";;
+	Darwin) NXJ_FORCE32="-d32";;
+esac
+
+export CLASSESDIR=/tmp/haikuvm
+NXJ_CP_PC="$(my_build_cp "$NXJ_HOME/lib/pc")"
+NXJ_CP_NXT="$(my_build_cp "$NXJ_HOME/lib/nxt")"
+
+
+echo "#"
+echo "#"
+echo "#"
+echo "#############################################################"
+echo "# generating c files"
+echo "#############################################################"
+java "-Dhaikuvm.home=$NXJ_HOME"  "-DCOMMAND_NAME=$NXJ_COMMAND"  -classpath "$NXJ_CP_PC"  haikuvm.pc.tools.HaikuVM --bootclasspath "$CLASSESDIR:$NXJ_CP_NXT" $*
+error=$?
+
+if [ $error -gt 0 ]
+then
+    echo "#############################################################"
+    echo "# error while generating c files"
+    echo "#############################################################"
+    exit $error
+fi
+
+echo "#############################################################"
+echo "# generated c files"
+echo "#############################################################"
+echo "#"
+echo "#"
+echo "#"
+echo "#############################################################"
+echo "# cross compiling"
+echo "#############################################################"
+echo "#"
+echo "#"
+echo "#"
+
+cd target/cross
+make clean
+make all
+error=$?
+
+if [ $error -gt 0 ]
+then
+    echo "#############################################################"
+    echo "# error while cross compiling"
+    echo "#############################################################"
+    exit $error
+fi

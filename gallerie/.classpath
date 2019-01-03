@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/bootstrap"/>
+	<classpathentry kind="lib" path="/lib/nxt/classes.jar" sourcepath="D:/eclipse/win32/released/JDK-1.6.0/src.zip"/>
+	<classpathentry kind="src" path="/examples"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

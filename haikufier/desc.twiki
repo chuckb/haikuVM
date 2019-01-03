@@ -1,0 +1,629 @@
+---+ Kurze Einführung
+HaikuVM wurde gestartet um Roboter Enthusiasten die auf AVR Basis entwickeln die Welt von leJOS zu öffnen (leJOS ist ein Java-Betriebssystem für die programmierbaren Lego-Steine Lego Mindstorms RCX (leJOS RCX) und NXT (leJOS NXJ)).
+
+HaikuVM ist im Kern einfach eine JAVA VM für AVRs. Es wird darauf verzichtet eine eigene JAVA Runtime anzubieten. Statt dessen wird diese von leJOS übernommen.
+
+Hier einige Features von HaikuVM:
+   * Preemptive threads 
+   * Exceptions 
+   * Synchronization 
+   * double and float support
+   * Arrays, including multidimensional ones 
+   * Recursion 
+   * Garbage collection
+   * Supports inheritance and interfaces
+   * Runs on AVR ATmega8, AVR ATmega328p (and Windows, UNIX)
+   * Configurable 64, 32 or 16 bit data types
+   * Configurable 16 or 8 bit char type
+   * Tested with Suns JAVA 1.6
+   * Zero Assembler Code
+   * Requires only down to 5k Bytes of code memory (includes HaikuVM and your Java program)
+   * Needs only 250 Bytes RAM (the rest is for your JAVA application)
+   * About 55k Java opcodes per second on 8 Mhz AVR Mega8
+
+Und hier ein einfaches Programm für den ASURO aus dem HaikuVM samples-Bereich. 
+[code]
+package robot.asuro;
+import static haiku.avr.lib.asuro.lib2_8_0_rc1.AsuroLib2_8_0_rc1.*;
+
+public class SimpleThreading {
+	private static class blink_Task extends Thread {
+		public void run() {
+			while (true) {
+				BackLED(ON, ON);
+				Msleep(1000);
+				BackLED(OFF, OFF);
+				Msleep(1000);
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+		Init(); // initialize the ASURO
+		
+		new blink_Task().start(); // starts the parallel blink task.
+
+		while (true) {
+			StatusLED(GREEN);
+			Msleep(500);
+			StatusLED(RED);
+			Msleep(500);
+		}
+	}
+}
+[/code]
+Diese Programm braucht auf dem ASURO, inklusive(!) der JAVA VM, 4614 Byte flash memory. 
+[code]
+AVR Memory Usage
+----------------
+Device: atmega8
+
+Program:    4614 bytes (56.3% Full)
+(.text + .data + .bootloader)
+
+Data:        729 bytes (71.2% Full)
+(.data + .bss + .noinit)
+[/code]
+Da ist also noch genug Platz für größere Programme. Wie viel mehr ist dann erst auf dem AAR04 möglich!
+
+Kenner werden bemerkt haben, dass sich dieses Programm auf die Asuro Lib 2.8.0 rc1 stützt. Diese Lib habe ich zu diesem Zweck 1:1 nach JAVA portiert. (Aber auch andere Libs stehen für HaikuVM zur Verfügung z.B.: nanoVM Lib und die ARDUINO Lib.)
+
+Kenner werden auch bemerkt haben, dass sich die Tools von HaikuVM an denen von leJOS anlehen (um hier das Rad - insbesondere die Dokumentation - nicht neu erfinden zu müssen). Die Anlehnung an leJOS geht jedoch viel weiter. So unterstützt HaikuVM die gesamte RunTime von Sun insoweit sie im leJOS Projekt implementiert ist (siehe dort classes.jar). Dadurch ist es z.B. für HaikuVM unnötig Math.java neu schreiben zu müssen (wie in nanoVM geschehen) denn sie liegt in der classes.jar von leJOS vor und diese classes.jar wird von HaikuVM eingebunden. 
+
+---+ Was ist HaikuVM
+
+HaikuVM ist eine Java VM (JVM) für AVR Atmega Prozessoren. HaikuVM wurde mit dem Ziel entwickelt den Roboter ASURO mit Java programmieren zu können. ASURO wird von einem AVR Mega8 gesteuert. D.h. die HaikuVM muss mit wenig Resourcen aus kommen können. Im Fall vom Atmega sind das: 
+   * 8k Byte RAM (davon werden 1k vom bootloader benötigt)
+   * 1k RAM
+   * 8Mhz Takt
+
+HaikuVM ist aber nicht auf den Atmega8 beschränkt sondern unterstützt z.Zt. auch Atmega328p. Es gibt allen Grund anzunehmen, dass alle AtmegaX (>=Atmega8) unterstützt werden. Darüber hinaus läuft HaikuVM auch unter Windows (siehe Konfigurations property Config).
+
+
+HaikuVM (hier am Beispiel für Atmegas) besteht aus folgenden Komponenten:
+
+1) Die Implementierung einer einfachen virtuellen Java-Maschine in C, im Folgenden HaikuVM C-Code genannt.
+
+2) Das Tool haikuc zur Übersetzung von java Dateien in class Dateien. (Haikuc ist nichts anderes als ein kleiner Wrapper für javac.)
+
+3) Das Tool haikulink zur Übersetzung von JAVA class Dateien in binaries für die Zielplattform. Haikulink ist ein Wrapper für die folgenden beiden Tools.
+
+3.1) Das Tool haikufier zur Übersetzung von JAVA class Dateien in C-Datenstrukturen. Haikufier ist selbst in JAVA geschrieben und macht ausgiebig Gebrauch von der BCEL Library zur Analyse und Manipulation von JAVA Bytecode. 
+
+3.2) Ein C Cross-Compiler der den HaikuVM C-Code einerseits und die erzeugten C-Datenstrukturen andererseits in eine einzige ausführbare Datei compiliert (HEX Datei). Der verwendete C Cross-Compiler ist z.Zt. WinAVR 20100110.
+
+4) Das Tool haikuupload das dazu dient die erzeugte HEX Datei in einen Atmega zu laden und zu starten. (Haikuupload ist nichts anderes als ein kleiner Wrapper für AvrDude.)
+
+Trotzdem steht die HaikuVM (siehe Punkt 1) im Zentrum der HaikuVM Tools. Allerdings ist die Implementierung eine JVM nur erst mal die halbe Miete. Es ist zwar nicht notwendig, aber so richtig schön wird das programmieren mit JAVA erst, wenn man zusätzlich eine ausgewachsene JAVA Runtime Library zur Verfügung hat. Aber woher nehmen wenn nicht stehlen? Ich habe mich fürs Stehlen entschieden und die JAVA Runtime Library von leJOS übernommen. Vielleicht mit dem Fernziel, dass die AVR Roboter Community mit der leJOS Community kolaborieren kann. 
+
+---+ Warum HaikuVM?
+
+Gerne hätte ich den ASURO mit JAVA programmiert. Die NanoVM ist nah dran diesen Wunsch zu erfüllen, hat aber nun ausgerechnet nicht die schönen Features von JAVA wie Exceptions und Threads. Denn gerade hier wäre der Mehrwert von JAVA gegenüber C. Gleichzeitig würde ich gerne vom - im Vergleich zu C Programmen - kompakteren JAVA Bytecode profitieren um mehr Programm im ASURO unter zu bringen. (Experimente zeigten mir, dass compilierter C Code für den AVR ca. drei mal größer ist als entsprechender JAVA Bytecode.)
+
+---+ JVMs die HaikuVM beeinflußt haben
+Die *nanoVM* (http://www.harbaum.org/till/nanovm/index.shtml) von Till Harbaum zeigte mir, dass es möglich ist, trotz der knappen Resourcen, eine JVM für den AVR Mega8 zu entwerfen. 
+
+Ausserdem wurde HaikuVM von *tinyVM* beeinflußt, die heute - in ausgebauter Form - die JVM ist welche leJOS zu Grunde liegt. 
+
+Komplett aus dem *leJOS* Projekt übernommen habe ich die JAVA RunTime Bibliothek. In leJOS ist das die classes.jar. Nur dort wo sie zu NXJ-spezifisch ist sind Klassen durch haiku.jar überschrieben. Aber Achtung: die leJOS Java Runtime implementiert nur ein Subset der Standard Java Runtime (aber ein ziemlich großes Subset). Darüber hinaus haben einige Klassen der leJOS Java Runtime zusätzliche Methoden welche nicht in der Standard Java Runtime existieren.
+
+Beeindruckt davon, dass die *nanoVM* selbst unter den knappen Resourcen eines AVR Mega8 lauffähig ist, fand ich es einerseits schade, dass schöne JAVA Features wie Threads und Exceptions nicht unterstützt werden. *leJOS* macht das, läuft aber andererseits nicht auf AVRs. *HaikuVM* soll auf AVRs laufen (auch AVR Mega8) *und* Threads und Exceptions unterstützen.
+
+
+---++ Features der nanoVM
+   *    Support for standard java bytecode
+   *    Tested on AVR Mega8 and Mega32
+   *    Configurable 15/31 bit integer arithmetic
+   *    Optional float support
+   *    Garbage collection
+   *    Bootloader for simple application upload
+   *    Tested with Suns JDK and IBMs jikes
+   *    Supports inheritance
+   *    Unified stack and heap architecture
+   *    Requires less than 8kBytes of code memory
+   *    at least 512 Bytes code storage for java byte code (e.g. the complete 512 eeprom bytes available on the AVR ATmega8 CPU)
+   *    at least 768 Bytes application RAM available (of 1k total RAM available on the AVR ATmega8 CPU)
+   *    About 20k Java opcodes per second on 8 Mhz AVR
+   *    Native classes include:
+      *      java/lang/Object (object handling)
+      *       java/lang/System (IO handling)
+      *       java/io/PrintStream (console output)
+      *       java/lang/StringBuffer (string processing)
+      *       asuro (asuro control)
+      *       Native support for LCDs, AVR io etc
+
+
+---++ Features der tinyVM
+(http://tinyvm.sourceforge.net)
+   * Great object oriented language (Java) 
+   * Preemptive threads 
+   * Exceptions 
+   * Synchronization 
+   * Arrays, including multidimensional ones 
+   * Recursion 
+   * Access to RCX buttons 
+   * No need to install a cross-compiler 
+   * Fairly easy to install, even under CygWin 
+   * TinyVM's firmware allows itself to be replaced 
+   * Comes with an emulation tool 
+   * Nicely documented APIs 
+   * You can rerun a program. 
+   * Full object persistence across runs. 
+   * tinyvm.rcx.Time with sleep() and currentTimeMillis(). 
+   * Timers (tinyvm.rcx.Timer). 
+   * Random numbers (java.util.Random). 
+   * LCD characters (tinyvm.rcx.TextLCD). 
+
+---+++leJOS
+Infos zu Performance
+   * 1500-2000 Flops aus  http://it-republik.de/jaxenter/artikel/Java-goes-to-space-0232.html
+   * http://www.jopdesign.com/perf.jsp
+   * Kfl benchmark 25 interations/sec
+
+(http://lejos.sourceforge.net)
+Infos zu GC http://www.gloomy-place.com/lejos/lejoscgc.pdf
+
+---++Features von HaikuVM
+   * Support for standard java bytecode
+   * Preemptive threads 
+   * Exceptions 
+   * Synchronization 
+   * double and float support
+   * Arrays, including multidimensional ones 
+   * Recursion 
+   * Garbage collection (without compaction)
+   * Supports inheritance and interfaces
+   * Tested on AVR ATmega8, AVR ATmega328p and Windows
+   * Configurable 16, 32 or 64 bit data types
+   * Tested with Suns JAVA 1.6
+   * Zero Assembler Code
+   * Requires only down to 5kBytes of code memory (includes HaikuVM and your Java program)
+   * At least 800 Bytes application RAM available (of 1k total RAM available on the AVR ATmega8 CPU)
+   * About 55k Java opcodes per second on 8 Mhz AVR Mega8
+
+---+Zusätzlich benötigte Software
+   * JAVA 1.6
+   * WinAVR 20100110
+   * Eclipse IDE (optional)
+
+---+Arbeitsweise von HaikuVM
+
+Ein JAVA Programm für HaikuVM wird von SUNs JAVA 1.6 in class Dateien - also Bytecode - übersetzt. Dadurch werden automatisch alle JAVA Programme von denen dieses Programm abhängt auch übersetzt (falls sie nicht schon übersetzt vorlagen). Dabei wird nicht gegen die JAVA Runtime von SUN kompiliert (rt.jar) sondern gegen die Runtime aus dem leJOS Projekt (classes.jar). Diese wiederum ist für HaikuVM leicht an Atmegas angepasst (die Anpassungen befinden sich in haiku.jar). Dieser Vorgang wird durch das Tool haikuc erledigt.
+
+Im Unterschied zu leJOS und nanoVM benötigt HaikuVM einen cross-compiler für die Zielmaschine. Denn die HaikuVM Tools übersetzt den JAVA Bytecode in C welcher letztlich für die Zielmaschine übersetzt werden muss. Aber anders als GCJ oder ... erseugen die HaikuVM Tools nicht C Code sondern im Wesentlichen C Daten und C Datenstrukturen in denen der Bytecode abgelegt wird. Dieser wird von der HaikuVM (im Atmega) interpretiert. Nur der Code der HaikuVM selbst liegt als (unveränderlicher) C Code vor und wird, zusammen mit den (oben erwähnten und jeweils Bytecode abhängigen) C Daten und C Datenstrukturen, übersetzt und gelinked. Es ist der Linker der letztlich dafür verantwortlich ist, dass Haiku Programme auf der Targetmaschine so überraschend kurz sind. Denn er entfernt alle ungenutzten Codeteile von HaikuVM und ungenutzte Datenanteile des Bytecode.
+
+
+---+Philosopie von HaikuVM
+
+Im Unterschied zu leJOS und nanoVM versucht HaikuVM mit so wenig wie nötig nativen Methoden, also Methoden die unbedingt für JAVA in C implementiert sein müssen, aus zu kommen. Im Wesentlichen beschränkt sich HaikuVM auf setter und getter Methoden zum Lesen und Schreiben von Arbeitsspeicher:
+	public static native int  getMemory8(int adr);
+	public static native void setMemory8(int adr, int value);
+	etc.
+Ein Methode (in System) zum Auslesen der Zeit in Millisekunden:
+	public static native long currentTimeMillis();
+Ein Methode (in System) zum Kopieren von Arrays:
+	public static native void arraycopy(Object src, int srcPos, Object dest, int destPos, int length);
+Und zwei Methoden (in Thread) zum Starten und Beenden von Threads:
+	private native int fork();
+	private native int setStateAndSwitch(int state);
+
+Das sind wirklich nur wenig native Methoden. So begründet sich der Name Haiku.
+
+Ein Beispiel:
+
+Dort wo leJOS und nanoVM zum Auslesen von analogen Daten eine native Methode in C bemühen wird das in HaikuVM (für Atmega8) wie folgt in JAVA implementiert. Ausschnitt:
+	...
+	public static final long F_CPU	= 8000000L;
+	public static final int REFS0	= 6;
+	public static final int ADSC	= 6;
+	public static final int ADIF	= 4;
+	public static final int ADC	    = (((0x04) + 0x20)); //16Bit
+	public static final int ADCSRA	= (((0x06) + 0x20));
+	public static final int ADMUX	= (((0x07) + 0x20));
+	...
+
+	public static int ReadADC(int mux, int sleep) {
+		setMemory8(ADMUX, (1 << REFS0) | mux); // Spannungsreferenz mit externer Kapazitaet
+
+		setMem(ADCSRA, (1 << ADSC)); // Starte AD-Wandlung
+
+		while ((getMemory8(ADCSRA) & (1 << ADIF)) == 0)		// Ende der AD-Wandlung abwarten
+			;
+
+		setMem(ADCSRA, (1 << ADIF)); // AD-Interupt-Flag zuruecksetzen
+		return getMemory16(ADC); // Ergebnis als 16-Bit-Wert
+	}
+
+Darüber hinaus bietet HaikuVM (genauer das Tool haikufier) die Möglichkeit native Methoden (wieder) auf JAVA Methoden abzubilden.
+
+Beispiel: 
+	
+
+
+
+   
+---+Übersetzen und starten von Programmen
+
+Auch hier möchte ich das Rad nicht neu erfinden und lehne mich bei den Kommandos und ihrer Bedeutung stark an die von leJOS an. Insbesondere hoffe ich (damit redundante) Dokumentation zu sparen. Und vielleicht kennt sich ja der ein oder andere mit leJOS aus und findet sich dadurch schneller in HaikuVM zurecht.
+
+Die leJOS NXJ Tools zum Compiling, Linking und Uploading von Programmen lauten:
+   * nxjc
+   * nxjlink
+   * nxjupload
+   * nxj
+
+Entsprechend heißen die HaikuVM Tools:
+   * haikuc
+   * haikulink
+   * haikuupload
+   * haiku
+
+Für eine detailierte Beschreibung verweise ich auf:
+http://lejos.sourceforge.net/nxt/nxj/tutorial/Preliminaries/CompileAndRun.htm
+
+---++haikuc – compile a JAVA program
+Compiles one or more java files.
+
+Usage: haikuc <java-files>
+
+Example: 
+
+haikuc HelloWorld.java 
+haikuc calls javac with parameters:
+
+-bootclasspath <path to haiku.jar and classes.jar>
+<java-files>
+
+-bootclasspath is set because HaikuVM does not use the standard java.lang classes but has its own versions in haiku.jar and classes.jar.
+
+---++haikulink – haikufy the program and cross-compile the resulting C Program
+Calls the HaikuVM linker.
+
+Usage: haikulink [-v|--verbose] [-g|--debug] [-gr|--remotedebug] [-a|--all] [-dm|--disablememcompaction] [-ea|--enableassertions] [-ec|--enablechecks] [--Config <config>] [-od|--outputdebug <debug-file> ] -o <binary> main-class
+
+Example:
+
+haikulink -v -o HelloWorld.hex HelloWorld 
+Links the specified main class with any classes that it references in the current directory and with the standard HaikuVM classes from haiku.jar and classes.jar (from leJOS) to produce a C program. Next this C program will be cross-compiled into the binary HEX program that can be uploaded and run.
+
+The -v or --verbose flag causes a list of class names and method signatures included in the binary to be sent to the standard output. This output is extremely useful for debugging.
+
+The -g or --debug flag is not jet supported from HaikuVM.
+
+The -gr or --remotedebug flag is not jet supported from HaikuVM.
+
+The -od or --outputdebug flag is not jet supported from HaikuVM.
+
+The -ec or --enablechecks flag is used to enable additional run time checks. These checks are relatively expensive (and rarely generate errors) and so are off by default. Currently the only check that this setting enables is the testing for *StackOverflowError* and *ArrayIndexOutOfBoundsException*.
+
+The -ea or --enableassertions flag is used to enable the checking of assert statements with the program.
+
+The -dm or --disablememcompactions flag is always set for HaikuVM. So memory compaction is always disabled and can not be enabled for HaikuVM. Normally a marture garbage collector will attempt to move large objects in memory to maximise the amount of contiguous free space, this is not implemented in the simple garbage collector of HaikuVM.
+
+The linker removes methods that are not used. Specify -a or --all to include all methods whether they are used or not. This should never be necessary.
+
+The -o <binary> option is used to define the name of the output file.
+
+The --Config <config> flag is an addition of HaikuVM to spezify (overwrite) the default configuration (see configuration properties). 
+
+Use the -h or --help flag to print out the options.
+
+---++haikuupload – upload a program
+Usage: haikuupload [-b|--bluetooth] [-u|--usb] [-d|--address address] [-n|--name name] [-r|--run] <binary>
+
+Example:
+
+haikuupload HelloWorld.hex
+
+Uploads the binary (.hex) file. By default USB is tried first and then Bluetooth. If the --bluetooth flag is specified, only Bluetooth is tried. If --usb is specified, only USB is tried.
+
+When Bluetooth is used, a search for Bluetooth devices is done, unless the -address flag is set, when a device with the given address is connected to.
+
+The --name parameter limits the search for a NXT with the given name. If this is not specified, nxjupload tries to connect to each NXT that it finds and will upload to the first NXT that is successfully connects to.
+
+If the --run parameter is specified, the program is run after it has been uploaded.
+
+---++haiku – link, upload and run a program
+Usage: haiku [options] main-class
+
+Example: 
+
+haiku -r HelloWorld 
+The haiku command links and uploads a JAVA program. It is the equivalent of haikulink followed by haikuupload.
+
+Any of the options for haikulink and haikuupload can be specified.
+
+The default binary name is <main-class>.hex, e.g. Tune.hex.
+
+
+---+Konfiguration
+
+HaikuVM wir über die Datei "*HaikuVM.properties*" konfiguriert. Zulässige Properties sind:
+  * Target: in {Atmega8, Atmega328p, WIN32}
+  * Target: in {asuro, arduino, win32}
+  
+  * CPU: in {atmega8, atmega328p, WIN32}
+  * MemorySize: size in Bytes
+  * InitialMainThreadStackSize: size in Bytes or auto   
+  * InitialOtherThreadStackSize: size in Bytes or auto   
+  * Mode: in {32/64,  16/64, 32/32, 16/32, 16/16}   
+  * Char: in {1, 2} JAVA type *char* is 2 or 1 Byte   
+  * InternalExceptionEnable: list of Exceptions or none  
+  * InternalExceptionThrow: list of Exceptions or none
+
+Property Abschnitte können durch das spezielle Property Extends voneinander abgeleitet werden. So sieht die Konfiguration für den ARDUINO aus:
+ arduino.Extends = avr
+ arduino.MemorySize=...
+ ...
+ arduino.InternalExceptionThrow=...
+
+---++Target
+Bestimmt die Zielmaschine so, wie sie für den (Cross-)Compiler angegeben werden muss.
+
+Beispiel 1:
+Target=atmega8
+Legt als Zielplattform den atmega8 fest.
+
+---++MemorySize
+Bestimmt die Größe des RAM die der HaikuVM zusteht. Die Größe wird in Bytes angegeben.
+ 
+Zulässige Werte sind positive ganze Zahlen.
+
+Beispiel:
+
+MemorySize=700
+Der JVM Heap (darin enthalten ist der JAVA Heap) und die Summe aller JVM static Variablen wird auf 700Byte festgelegt.
+
+Der Rest vom RAM müssen sich der HaikuVM Bytecodeinterpreter und native Methoden des Benutzers (sofern vorhanden) teilen. Als größter Verbraucher von Rest RAM ist hier der ABI Stack von HaikuVM zu nennen. Dieser ist nicht zu verwechseln mit dem Stack des zu interpretierenden JAVA Programms welcher im Heap untergebracht ist. Es zeigt sich, dass ein Rest RAM von 300Bytes für den Atmega8 reicht. Somit nutzen 700 + 300= 1000 den verfügbaren RAM eines Atmega8 gut aus. 
+
+Bemerkung:
+Der HaikuVM Bytecodeinterpreter ist nicht rekursiv implementiert. Damit wächst sein ABI Stack Bedarf nicht mit der Rekursivität des zu interpretierenden JAVA Programms. 
+
+---++InitialMainThreadStackSize
+Bestimmt die Größe des ersten/initialen StackFrames des Main Threads. Die Größe wird in Anzahl Stackelementen angegeben.
+
+Zulässige Werte sind positive ganze Zahlen.
+Empfohlen: (MemorySize/4) / sizeof(Stackelement)
+Jedoch nicht kleiner als 145.
+
+Beispiel:
+
+InitialMainThreadStackSize=200
+Das erste/initiale StackFrame des Main Threads umfasst maximal 200 Elemente.
+
+Normalerweise legt HaikuVM für jeden JAVA Methodenaufruf einen eignen StackFrame im Heap an der den maximalen Stackbedarf dieser Methode genau abdeckt. Die Verwaltung von StackFrames kostet aber Aufwand (space + time). Wer den Stackbedarf seines MainThreads kennt kann ihn hiermit festlegen. HaikuVM bedient sich immer erst bei diesem Stack. Nur wenn der tatsächliche Stackbedarf darüber hinaus geht legt es pro Methodenaufruf (wieder) einen eignen StackFrame an.  
+
+---++InitialOtherThreadStackSize
+Bestimmt die Größe des ersten/initialen StackFrames jedes weiteren Threads. Die Größe wird in Anzahl Stackelementen angegeben.
+
+Zulässige Werte sind positive ganze Zahlen.
+Empfohlen: (MemorySize/12) / sizeof(Stackelement)
+Jedoch nicht kleiner als 55.
+
+Beispiel:
+
+InitialOtherThreadStackSize=55
+Das erste/initiale StackFrame jedes weiteren Threads umfasst maximal 55 Elemente.
+
+
+
+  
+---+Directories
+
+Installationsbasis (readonly)
+./bin
+./bin/lib
+./bin/resources
+./haikuVM
+// ./haikuVM/C/target/<Target> -> ./<YourApp>/C/target/<Target>
+
+runtime
+./kernel -> ./bin/resources		// haiku
+./bootstrap -> ./bin/resources	// haiku
+./classes -> ./bin/resources	// leJOS
+
+Dein JAVA Source (read/write)
+./<YourAppJAVA>
+
+Generierter C-Code (read/write) 
+./<YourAppC>
+./<YourAppC>/haikuC				// Konfigurationen
+./<YourAppC>/haikuJava			// Klassen aus <YourAppJAVA> und runtime
+./<YourAppC>/haikuVM			// C-Code der virtuellen Maschinenimplementierung
+./<YourAppC>/haikuVM/native		// C-Code für native JAVA Funktionen von HaikuVM
+./<YourAppC>/target/<Target>	// Target-spezifische Kompilate
+  
+---+HaikuVM vs. JAVA Datentypen
+Die HaikuVM unterstützt alle primitiven JAVA Datentypen. Allerdings werden insbesondere double und float direkt auf die entsprechenden C-Datentypen gemapt und genügen deshalb nicht den strengen JAVA Definitionen für diese Datentypen. In der mit HaikuVM adressierten Praxis (Robotersteurung) kann man dies wahrscheinlich verschmerzen.
+
+Im Übrigen hängen die Größe und Präzision der Datentypen vom gewählten Mode aber auch vom gewählten Target ab (siehe Konfiguration).
+
+<Tabelle>
+
+
+  
+---+JAVA Exceptions
+
+Die HaikuVM unterstützt JAVA Exceptions.
+
+Darüber hinaus nutzt HaikuVM einige der JAVA Exceptions selbst intern (im C Code). Hier die Liste der intern genutzten JAVA Exceptions:
+   * Reserved					0
+   * NullPointerException		1
+   * ArrayStoreException		2
+   * IndexOutOfBoundsException	3
+   * NoSuchMethodError			4
+   * StackOverflowError			5
+   * OutOfMemoryError			6
+   * ClassCastException			7
+   * ArrayIndexOutOfBoundsException	8
+   * InternalError		9
+ 
+Wenn es um Performanz geht (und man sicher ist, dass das JAVA Programm fehlerfrei ist) kann man einzelne Tests auf Exceptions ganz abschalten. 
+Dies geht (nur) mit den Exceptions: *StackOverflowError* und *ArrayIndexOutOfBoundsException* durch weglassen bei der Property:
+  *InternalExceptionEnable*=NullPointerException, ArrayStoreException, IndexOutOfBoundsException, NoSuchMethodError, OutOfMemoryError,  ClassCastException, InternalError
+Im Default sind dann auch diese beiden Exceptions nicht in der *InternalExceptionEnable*-Property enthalten. Sie können bequem mittels der Option *--enablechecks* von *haikulink* hinzugefügt werden.
+
+Das Weglassen anderer Exeptions hat (noch) keinen Einfluß auf die Performanze.
+
+Wer sich sagt, dass beim Werfen einer internen Exception das Programm sowieso nicht weiter arbeiten soll bzw. kann kann weiter Codegröße einsparen durch setzten der Property:  
+ *InternalExceptionThrow*=none   
+Dadurch führt jede enable-te Exception der HaikuVM selbst zu einem Programmabbruch.
+
+---+JAVA Threads
+
+Die HaikuVM unterstützt JAVA Threads (Preemptive threads) und Synchronization. Preemptive sind Threads jedoch nicht auf Maschinen Instruktions Ebene sondern (nur) auf Bytecode Ebene. D.h. jeder Bytecode ist atomar (übrigends sind auch alle nativen Methoden atomar). Die HaikuVM schaltet nur nach besonderen Bytecodes von einem Thread zum nächsten:
+ - At application's backward branch
+ - Thread.yield()
+ - Thread.sleep(i>0)
+ - Thread.join()
+ - Thread.isolateJoin()
+ - Thread.monitorEnter() if contended  e.g. synchronized(foo)
+ - Thread.monitorWait() if contended  e.g. foo.wait()
+ - Thread.monitorNotify(), if some thread is waiting  e.g. foo.notify[All]().
+ 
+Note that monitorExit does NOT do a reschedule().
+
+
+ 
+---+Garbage Collection
+
+In HaikuVM ist ein conservative Garbage Collector ohne compaction implementiert.
+
+---+Memory Benutzung
+Der HaikuVM Bytecodeinterpreter ist nicht rekursiv implemetiert. Damit wächst sein ABI Stack Bedarf nicht mit der Rekursivität des zu interpretierenden JAVA Programms. 
+
+Ausnahme:
+Die Implementierung des Bytecode *multianewarray* (multianewarray (c5) 3: indexbyte1, indexbyte2, dimensions) ist in HaikuVM rekursiv gelöst. Während des Anlegens eines Multidimensionalen Arrays wird pro Dimension eine zusätzliche Rekursionsstufe beschritten. Allerdings ist der Stackbedarf pro Rekursionsstufe gering.
+
+Es zeigt sich, dass ein Rest RAM von 300Bytes für den Atmega8 reicht und damit kann der Hauptteil des RAM dem JAVA Programm zur Verfügung gestellt werden (siehe Property MemorySize).
+
+ 
+---+Java Runtime
+
+Die Java Runtime von HaikuVM ist komplett aus dem *leJOS* Projekt übernommen. In leJOS ist das die classes.jar. Nur dort wo sie zu NXJ-spezifisch ist sind Klassen durch haiku.jar überschrieben. Aber Achtung: die leJOS Java Runtime implementiert nur ein Subset der Standard Java Runtime (aber ein ziemlich großes Subset). Darüber hinaus haben einige Klassen der leJOS Java Runtime zusätzliche Methoden welche nicht in der Standard Java Runtime existieren.
+
+---+Bytecode rewriting (The Squawk System • Septemer 2002)
+
+---+The Bytecode Set
+The Squawk bytecode set is an optimized version of the standard JVM bytecode set. It has been designed to make the bytecodes n more compact, so they will require less memory, and simpler, so verification and interpretation will be faster and require less code to implement.
+
+----+Bytecode simplification
+Several bytecodes have been redesigned in order to simplify the VM. For instance, the invokespecial bytecode has been replaced with invokeinit and invokesuper bytecodes to simplify verification. The new bytecode has been removed because of the considerable complications it causes for verification. The bytecode itself has been replaced with the clinit bytecode, and some of its functionality has been moved into the invokeinit bytecode, which creates the new object. The lookupswitch bytecode has been replaced by the lookup bytecode that precedes a tableswitch or
+stableswitch bytecode. This allows more compact lookup switch tables to be implemented and also simplifies the VM by only having one kind of multi-branch opcode.
+
+----+Small bytecodes
+Certain frequently occurring bytecodes are given alternative compact encodings. In all cases the compact encoding includes a parameter from 0 to 15. There are bytecodes in this format to load and store local variables, access class and object reference tables, and push integer constants.
+
+---+Performance von HaikuVM (Revision 52)
+Performancetests habe ich auf Atmega328p mit folgendem JAVA Programm gemacht:
+
+public class Fibonacci32Bit {
+  static int fib(int n) {
+    if(n < 2)
+      return 1;
+    else
+      return fib(n-2) + fib(n-1);
+  }
+
+  public static void main(String[] args) {
+    long t0 = System.currentTimeMillis();
+    for(int i=0;i<=30;i++)
+      System.out.println("Fibonacci of "+i+" is "+fib(i)+" in "+(System.currentTimeMillis()-t0)+" ms");
+  }
+}
+
+
+Das Programm wurde wie folgt Compiled, Linked und Uploaded:
+haiku -r Fibonacci32Bit
+Es wurden keine Optimize Optionen gesetzt (-Os optimize for size is default).
+
+Fibonacci of 0 is 1 in 73 ms
+Fibonacci of 1 is 1 in 127 ms
+Fibonacci of 2 is 2 in 194 ms
+Fibonacci of 3 is 3 in 261 ms
+Fibonacci of 4 is 5 in 326 ms
+Fibonacci of 5 is 8 in 391 ms
+Fibonacci of 6 is 13 in 458 ms
+Fibonacci of 7 is 21 in 535 ms
+Fibonacci of 8 is 34 in 610 ms
+Fibonacci of 9 is 55 in 694 ms
+Fibonacci of 10 is 89 in 787 ms
+Fibonacci of 11 is 144 in 888 ms
+Fibonacci of 12 is 233 in 1010 ms
+Fibonacci of 13 is 377 in 1167 ms
+Fibonacci of 14 is 610 in 1369 ms
+Fibonacci of 15 is 987 in 1653 ms
+Fibonacci of 16 is 1597 in 2046 ms
+Fibonacci of 17 is 2584 in 2633 ms
+Fibonacci of 18 is 4181 in 3538 ms
+Fibonacci of 19 is 6765 in 4934 ms
+Fibonacci of 20 is 10946 in 7133 ms
+Fibonacci of 21 is 17711 in 10643 ms
+Fibonacci of 22 is 28657 in 16259 ms
+Fibonacci of 23 is 46368 in 25300 ms
+Fibonacci of 24 is 75025 in 39851 ms
+Fibonacci of 25 is 121393 in 63353 ms
+Fibonacci of 26 is 196418 in 101303 ms
+Fibonacci of 27 is 317811 in 162640 ms
+Fibonacci of 28 is 514229 in 261832 ms
+Fibonacci of 29 is 832040 in 422249 ms
+Fibonacci of 30 is 1346269 in 681731 ms
+
+
+Das JAVA Programm unter HaikuVM benötigt bis einschliesslich fib(30) 681731 msec.
+
+
+
+---++Vergleich mit C auf ARDUINO Due
+
+Im Vergleich mit dem entsprechenden C Programm:
+
+int32_t fib(int32_t n) {
+	if(n < 2) 
+	  return 1;
+	else
+	  return fib(n-2) + fib(n-1);
+} 
+
+int main() {
+	int32_t i;
+	long t0 = millis();
+	for(i=0;i<=30;i++) {
+      printf("Fibonacci of %ld is %ld in %ld ms\n", i, fib(i), (long)(millis()-t0));
+	}
+	return 0;
+}
+
+Das C Programm mittels WinAVR 20100110 -Os (optimize for size) übersetzt benötigt 19494 ms.
+Das C Programm mittels WinAVR 20100110 -O3 (optimize for speed) übersetzt benötigt 16825 ms
+
+Es stellt sich heraus, dass das JAVA Programm unter HaikuVM ca. um einen Faktor 35 (bzw. 41) langsamer ist als das C Programm.
+
+---++Vergleich mit leJOS
+
+Da HaikuVM nicht auf NXJ portiert ist kann der Vergleich nur indirekt erfolgen. Dazu habe ich im leJOS Forum die Frage nach der Performance gestellt:
+http://lejos.sourceforge.net/forum/viewtopic.php?f=7&t=2989&p=14800&hilit=performance#p14800
+
+Und dankenswerterweise die folgende Antwort bekommen:
+"Anyway it turns out that RobotC like NXC does not support recursion so the fib test is not looking like a good test case. But I ran it anyway in Java the total time taken for up to and including fib 30 is 197566, the same code in gcc based C takes 3432ms, so the native C code in this instance is 57 times faster."
+
+Ein einfache (bzw. naive) Rechnung (57/35) ergibt, dass HaikuVM ca. um einen Faktor 1,6 (bzw. 1,4) schneller ist als leJOS.
+
+Natürlich steht der Vergleich auf sehr wackeligen Beinen und ist mit größter Vorsicht einzuordnen.
+
+---++Vergleich mit JAVA 1.6 unter Windows XP 32Bit
+
+Das Programm wurde wie folgt Compiled, Linked und gestarted:
+haiku -target WIN32 -r Fibonacci32Bit
+Dabei wurde es von Microsoft Visual C++ 2005 übersetzt und benötigte zur Laufzeit 1204 ms.
+
+JAVA 1.6 braucht dafür 656 ms. Und wurde dazu im reinen Interpretermode wie folgt gestarted:
+java -Xint Fibonacci32Bit
+
+D.h. HaikuVM ist ca. um den Faktor 2 langsamer als JAVA (interpretierend). Nicht schlecht für eine Anwendung die kein Assembler nutzt und bei der alle Datentypen 1 Byte aligned sind.
+ 
+ 
+Ausser Konkurenz dazu braucht JAVA 1.6 Hotspot (also Start ohne Option -Xint) nur 47ms.
+
+
+

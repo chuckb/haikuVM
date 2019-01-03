@@ -1,0 +1,5 @@
+#!/bin/sh
+
+filename=$1
+fileNameOnly="${filename##*/}"
+/home/bachi/Dropbox/Dev/Arduino/HaikuVM/haikuVM/bin/haiku -v --Config arduino -o ${fileNameOnly%.*}.hex /home/bachi/Dropbox/Dev/Arduino/HaikuVM/projects/src/LEDMatrix/${filename}

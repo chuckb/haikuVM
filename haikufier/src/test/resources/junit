@@ -1,0 +1,46 @@
+#!/bin/bash
+
+#set -x
+echo $1 $2 $3 $4 $5
+
+NXJ_COMMAND=`basename $0`
+NXJ_HOME=`dirname $0`/../../../..
+
+
+cd $NXJ_HOME
+NXJ_HOME=`pwd`
+
+test -d junitCProject || mkdir junitCProject
+test -d junitCProject || cd junitCProject
+cd junitCProject
+test -d haikuVM && rm -r haikuVM
+test -d haikuJava && rm -r haikuJava
+test -d utility && rm -r utility
+test -d haikuC && rm -r haikuC
+test -d tutorials && rm -r tutorials
+test -d tutorials || mkdir tutorials
+cp ../myCProject/tutorials/* tutorials
+
+
+TJAVAFILE=${5//.//}
+JAVAFILE=$TJAVAFILE
+# last hit wins
+for i in $NXJ_HOME/examples/src/main/java $NXJ_HOME/haikuBench/src/main/java
+do
+	test -e $i/$TJAVAFILE.java && JAVAFILE=$i/$TJAVAFILE
+done 
+
+if [ $1 = develop_link_upload ]
+then
+	test -d target && rm -r target
+
+	$NXJ_HOME/bin/haikuc -bootclasspath $NXJ_HOME/lib/nxt/classes.jar -classpath . $JAVAFILE.java 
+	$NXJ_HOME/bin/haikulink --bootclasspath $NXJ_HOME/lib/nxt/classes.jar --classpath . -v --Config $2 --Mode $3 $JAVAFILE 
+	
+	#$NXJ_HOME/bin/haiku -v --Config $2 --Mode $3 $JAVAFILE
+fi
+
+if [ $1 = execute ]
+then
+	$NXJ_HOME/bin/haikuupload `basename $JAVAFILE`
+fi
