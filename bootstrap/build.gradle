@@ -15,7 +15,7 @@ dependencies {
 }
 
 tasks.withType(JavaCompile) {
-  options.bootstrapClasspath = files(project(":haikurt").sourceSets.main.output.classesDirs, "../lib/nxt/classes.jar")
+  options.bootstrapClasspath = files(project(":haikurt").tasks["compileJava"].destinationDir, "../lib/nxt/classes.jar")
 }
 
 jar {

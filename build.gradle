@@ -1,3 +1,0 @@
-project(':bootstrap') {
-    evaluationDependsOn(':haikurt')
-}
