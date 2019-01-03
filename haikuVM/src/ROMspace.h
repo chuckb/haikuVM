@@ -1,4 +1,4 @@
-#if AVR
+#if (AVR || TEENSYDUINO)
 
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
