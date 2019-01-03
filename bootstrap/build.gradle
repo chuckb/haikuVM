@@ -3,7 +3,7 @@ plugins {
   id 'maven'
 }
 
-version = "1.4.3"
+version = "1.4.3-chuckb"
 group = "org.haikuvm"
 
 sourceCompatibility = 1.8
