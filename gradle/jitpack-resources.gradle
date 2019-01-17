@@ -16,7 +16,5 @@ artifacts {
 //  archives javadocJar
 }
 
-ext {
-  version = "1.4.3-chuckb"
-  group = "org.haikuvm"
-}
+version = "1.4.3-chuckb"
+group = "org.haikuvm"
