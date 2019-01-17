@@ -1,2 +1,5 @@
 include 'haikuRT'
 include 'bootstrap'
+include 'examples'
+include 'gallerie'
+include 'haikubench'

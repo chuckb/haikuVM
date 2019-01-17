@@ -4,9 +4,12 @@ apply from: '../gradle/jitpack-resources.gradle'
 sourceCompatibility = 1.7
 
 evaluationDependsOn(":haikuRT")
+evaluationDependsOn(":bootstrap")
 
 dependencies {
   implementation project(":haikuRT")
+  implementation project(":bootstrap")
+  implementation files("../lib/examples/mylib.jar")
 }
 
 tasks.withType(JavaCompile) {
