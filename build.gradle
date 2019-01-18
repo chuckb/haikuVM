@@ -42,6 +42,11 @@ jar {
       files("hardware")
     }
   }
+  into("config") {
+    from {
+      files("config")
+    }
+  }
 }
 
 artifacts {
