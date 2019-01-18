@@ -1,0 +1,4 @@
+apply from: "${rootDir}/gradle/jar-manifest.gradle"
+apply from: "${rootDir}/gradle/sources.gradle"
+// TODO: Fix javadocs...they are a mess
+//apply from: "${rootDir}/gradle/javadocs.gradle"

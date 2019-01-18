@@ -1,5 +1,6 @@
 apply plugin: 'java-library'
-apply from: '../gradle/jitpack-resources.gradle'
+apply from: '../gradle/jitpack.gradle'
+apply from: '../gradle/java-artifacts.gradle'
 
 sourceCompatibility = 1.7
 

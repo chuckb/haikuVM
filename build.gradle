@@ -1,41 +1,49 @@
-subprojects { sub ->
-  plugins.withType(JavaLibraryPlugin) {
-    sub.apply plugin: 'maven'
+apply plugin: 'java'
+apply from: 'gradle/jitpack.gradle'
 
-    sub.install {
-      repositories.mavenInstaller {
-        pom.project {
-          description "HaikuVM: a small JAVA VM for microcontrollers."
-          url "http://haiku-vm.sourceforge.net/"
-          licenses {
-            license {
-              name 'GNU General Public License, version 3'
-              url 'https://www.gnu.org/licenses/gpl-3.0.en.html'
-              distribution 'repo'
-              comments 'By using or conveying this work, you agree to hold harmless Chuck Benedict, Spartan Robotics, FRC Team 997, Corvallis High School, Corvallis School District, OR and any contributing volunteer for any risk of use.'
-            }
-          }
-          developers {
-            developer {
-              name "Bob Genom"
-              email "haikuvm@gmail.com"
-            }
-          }
-          contributors {
-            contributor {
-              name "Chuck Benedict"
-              url "http://github.com/chuckb/haikuvm"
-            }
-          }
-        }
-      }
-    }
+repositories {
+  jcenter()
+}
 
-    sub.jar {
-      manifest {
-        attributes('Implementation-Title': sub.name,
-                    'Implementation-Version': sub.version)
-      }
+configurations {
+    // configuration that holds jars to copy into distribution
+  releaseJars
+}
+
+dependencies {
+  releaseJars project(":haikufier")
+}
+
+jar {
+  manifest {
+    attributes('Implementation-Title': "${project.group}.${project.name}",
+                'Implementation-Version': version)
+  }
+  into("bin") {
+    from {
+      files("bin")
     }
   }
+  into("lib/pc") {
+    from configurations.releaseJars
+  }
+  into("lib/nxt") {
+    from {
+      files("lib/nxt")
+    }
+  }
+  into("haikuVM") {
+    from {
+      files("haikuVM")
+    }
+  }
+  into("hardware") {
+    from {
+      files("hardware")
+    }
+  }
+}
+
+artifacts {
+  archives jar
 }
