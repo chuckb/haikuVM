@@ -1,5 +1,5 @@
 version = "1.4.3-chuckb"
-group = "net.sourceforge.haiku-vm"
+group = "com.github.chuckb"
 
 apply plugin: 'maven'
 
@@ -25,7 +25,7 @@ install {
       contributors {
         contributor {
           name "Chuck Benedict"
-          url "http://github.com/chuckb/haikuvm"
+          url "http://github.com/chuckb/haikuVM"
         }
       }
     }

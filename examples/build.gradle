@@ -14,5 +14,6 @@ dependencies {
 }
 
 tasks.withType(JavaCompile) {
+  options.encoding = "UTF-8"
   options.compilerArgs << "-Xbootclasspath/p:"+project(":haikuRT").tasks["compileJava"].destinationDir
 }

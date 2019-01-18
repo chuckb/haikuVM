@@ -14,5 +14,9 @@ dependencies {
   testCompile "junit:junit:4.12"
 }
 
+tasks.withType(JavaCompile) {
+  options.encoding = "UTF-8"
+}
+
 // Turn off tests until we can fix them from a gradle build
 test.enabled = false
