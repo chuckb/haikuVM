@@ -6,13 +6,12 @@ plugins {
 version = "1.4.3-chuckb"
 group = "org.haikuvm"
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.6
 
-/*
+
 dependencies {
   implementation files("../lib/nxt/classes.jar")
 }
-*/
 
 tasks.withType(JavaCompile) {
   options.bootstrapClasspath = files("../lib/nxt/classes.jar")

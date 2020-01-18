@@ -6,7 +6,7 @@ plugins {
 version = "1.4.3-chuckb"
 group = "org.haikuvm"
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.6
 
 evaluationDependsOn(":haikuRT")
 
@@ -15,7 +15,10 @@ dependencies {
 }
 
 tasks.withType(JavaCompile) {
-  options.bootstrapClasspath = files(project(":haikuRT").tasks["compileJava"].destinationDir, "../lib/nxt/classes.jar")
+  doFirst {
+    options.fork = true
+    options.bootstrapClasspath = files(project(":haikuRT").tasks["compileJava"].destinationDir, "../lib/nxt/classes.jar")
+  }
 }
 
 jar {

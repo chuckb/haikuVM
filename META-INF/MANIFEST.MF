@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Implementation-Title: com.github.chuckb.build
+Implementation-Version: 1.4.3-chuckb
+
