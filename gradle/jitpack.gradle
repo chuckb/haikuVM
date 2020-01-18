@@ -1,0 +1,33 @@
+version = "1.4.3-chuckb"
+group = "com.github.chuckb"
+
+apply plugin: 'maven'
+
+install {
+  repositories.mavenInstaller {
+    pom.project {
+      description "HaikuVM: a small JAVA VM for microcontrollers."
+      url "http://haiku-vm.sourceforge.net/"
+      licenses {
+        license {
+          name 'GNU General Public License, version 3'
+          url 'https://www.gnu.org/licenses/gpl-3.0.en.html'
+          distribution 'repo'
+          comments 'By using or conveying this work, you agree to hold harmless Chuck Benedict, Spartan Robotics, FRC Team 997, Corvallis High School, Corvallis School District, OR and any contributing volunteer for any risk of use.'
+        }
+      }
+      developers {
+        developer {
+          name "Bob Genom"
+          email "haikuvm@gmail.com"
+        }
+      }
+      contributors {
+        contributor {
+          name "Chuck Benedict"
+          url "http://github.com/chuckb/haikuVM"
+        }
+      }
+    }
+  }
+}

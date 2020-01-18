@@ -5,11 +5,15 @@ apply from: '../gradle/java-artifacts.gradle'
 sourceCompatibility = 1.7
 
 evaluationDependsOn(":haikuRT")
+evaluationDependsOn(":bootstrap")
 
 dependencies {
   implementation project(":haikuRT")
+  implementation project(":bootstrap")
+  implementation files("../lib/examples/mylib.jar")
 }
 
 tasks.withType(JavaCompile) {
+  options.encoding = "UTF-8"
   options.compilerArgs << "-Xbootclasspath/p:"+project(":haikuRT").tasks["compileJava"].destinationDir
 }

@@ -1,4 +1,4 @@
 {
-  "java.configuration.updateBuildConfiguration": "interactive"
-//  "java.jdt.ls.vmargs": "-noverify -Xmx1G -XX:+UseG1GC -XX:+UseStringDeduplication -Xbootclasspath/a:/Users/chuck_benedict/Projects/haikuVM/haikuRT/build/libs/haikuRT-1.4.3-chuckb.jar"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.completion.guessMethodArguments": true
 }

@@ -1,13 +1,15 @@
-apply plugin: 'java-library'
-apply from: '../gradle/jitpack.gradle'
-apply from: '../gradle/java-artifacts.gradle'
+apply plugin: 'java'
 
 sourceCompatibility = 1.7
 
 evaluationDependsOn(":haikuRT")
+evaluationDependsOn(":bootstrap")
+evaluationDependsOn(":examples")
 
 dependencies {
   implementation project(":haikuRT")
+  implementation project(":bootstrap")
+  implementation project(":examples")
 }
 
 tasks.withType(JavaCompile) {

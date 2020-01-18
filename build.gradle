@@ -1,0 +1,54 @@
+apply plugin: 'java'
+apply from: 'gradle/jitpack.gradle'
+
+repositories {
+  jcenter()
+}
+
+configurations {
+    // configuration that holds jars to copy into distribution
+  releaseJars
+}
+
+dependencies {
+  releaseJars project(":haikufier")
+}
+
+jar {
+  manifest {
+    attributes('Implementation-Title': "${project.group}.${project.name}",
+                'Implementation-Version': version)
+  }
+  into("bin") {
+    from {
+      files("bin")
+    }
+  }
+  into("lib/pc") {
+    from configurations.releaseJars
+  }
+  into("lib/nxt") {
+    from {
+      files("lib/nxt")
+    }
+  }
+  into("haikuVM") {
+    from {
+      files("haikuVM")
+    }
+  }
+  into("hardware") {
+    from {
+      files("hardware")
+    }
+  }
+  into("config") {
+    from {
+      files("config")
+    }
+  }
+}
+
+artifacts {
+  archives jar
+}

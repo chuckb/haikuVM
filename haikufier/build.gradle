@@ -1,0 +1,22 @@
+apply plugin: 'java'
+apply from: '../gradle/jitpack.gradle'
+apply from: '../gradle/java-artifacts.gradle'
+
+sourceCompatibility = 1.7
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  compile "org.apache.bcel:bcel:5.2"
+  compile "org.scream3r:jssc:2.8.0"
+  testCompile "junit:junit:4.12"
+}
+
+tasks.withType(JavaCompile) {
+  options.encoding = "UTF-8"
+}
+
+// Turn off tests until we can fix them from a gradle build
+test.enabled = false

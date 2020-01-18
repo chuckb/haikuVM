@@ -1,72 +1,9 @@
-plugins {
-  id 'java-library'
-  id 'maven'
-}
+apply plugin: 'java-library'
+apply from: '../gradle/jitpack.gradle'
+apply from: '../gradle/java-artifacts.gradle'
 
-version = "1.4.3-chuckb"
-group = "org.haikuvm"
-
-sourceCompatibility = 1.6
-
+sourceCompatibility = 1.7
 
 dependencies {
   implementation files("../lib/nxt/classes.jar")
 }
-
-tasks.withType(JavaCompile) {
-  options.bootstrapClasspath = files("../lib/nxt/classes.jar")
-}
-
-jar {
-  manifest {
-    attributes('Implementation-Title': project.name,
-                'Implementation-Version': project.version)
-  }
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-  classifier = 'sources'
-  from sourceSets.main.allSource
-}
-
-/*
-task javadocJar(type: Jar, dependsOn: javadoc) {
-  classifier = 'javadoc'
-  from javadoc.destinationDir
-}
-*/
-
-artifacts {
-  archives sourcesJar
-//  archives javadocJar
-}
-
-install {
-  repositories.mavenInstaller {
-    pom.project {
-      description "HaikuVM: a small JAVA VM for microcontrollers."
-      url "http://haiku-vm.sourceforge.net/"
-      licenses {
-        license {
-          name 'GNU General Public License, version 3'
-          url 'https://www.gnu.org/licenses/gpl-3.0.en.html'
-          distribution 'repo'
-          comments 'By using or conveying this work, you agree to hold harmless Chuck Benedict, Spartan Robotics, FRC Team 997, Corvallis High School, Corvallis School District, OR and any contributing volunteer for any risk of use.'
-        }
-      }
-      developers {
-        developer {
-          name "Bob Genom"
-          email "haikuvm@gmail.com"
-        }
-      }
-      contributors {
-        contributor {
-          name "Chuck Benedict"
-          url "http://github.com/chuckb/haikuvm"
-        }
-      }
-    }
-  }
-}
-
