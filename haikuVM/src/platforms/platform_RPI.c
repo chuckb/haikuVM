@@ -1,52 +1,124 @@
 /*
-    Part of the Raspberry-Pi Bare Metal Tutorials
-    https://www.valvers.com/rpi/bare-metal/
-    Copyright (c) 2013-2018, Brian Sidebotham
-    This software is licensed under the MIT License.
-    Please see the LICENSE file included with this software.
+*  Created on: 01.06.2020
+*  Author: chuckb - adapted from Raspberry Pi Bare Metal Tutorials
 */
+//  Part of the Raspberry-Pi Bare Metal Tutorials
+//  Copyright (c) 2013-2015, Brian Sidebotham
+//  All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//  1. Redistributions of source code must retain the above copyright notice,
+//      this list of conditions and the following disclaimer.
+//
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//      this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+//  POSSIBILITY OF SUCH DAMAGE.
 
-#if defined( RPI )
+#if defined ( RPI0 ) || defined ( RPI1 ) || defined ( RPI2 ) || defined ( RPI3 ) || defined ( RPI4 )
 
-#include <stdint.h>
+#include "haikuJ2C.h"
+#include "pi/rpi-systimer.h"
 
-// This is the assembler startup
-// Set the stack pointer to beginning to program...it grows downward
-// Set up VFP
-// Jump to c startup function
+// This is the assembler startup for BCM2835
 __asm__(
   ".section \".text.startup\"\n\n"
-  ".global _start\n\n"
+  ".global _start\n"
+  ".global _get_stack_pointer\n"
+  ".global _exception_table\n"
+  ".global _enable_interrupts\n\n"
+  ".global _disable_interrupts\n\n"
+  ".equ    CPSR_MODE_USER,         0x10\n"
+  ".equ    CPSR_MODE_FIQ,          0x11\n"
+  ".equ    CPSR_MODE_IRQ,          0x12\n"
+  ".equ    CPSR_MODE_SVR,          0x13\n"
+  ".equ    CPSR_MODE_ABORT,        0x17\n"
+  ".equ    CPSR_MODE_UNDEFINED,    0x1B\n"
+  ".equ    CPSR_MODE_SYSTEM,       0x1F\n\n"
+  ".equ    CPSR_IRQ_INHIBIT,       0x80\n"
+  ".equ    CPSR_FIQ_INHIBIT,       0x40\n"
+  ".equ    CPSR_THUMB,             0x20\n\n"
+  ".equ	SCTLR_ENABLE_DATA_CACHE,        0x4\n"
+  ".equ	SCTLR_ENABLE_BRANCH_PREDICTION, 0x800\n"
+  ".equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000\n\n"
   "_start:\n\t"
-    "ldr     sp, =0x8000\n\t"
-    "MRC     p15, #0, r1, c1, c0, #2\n\t"
-    "ORR     r1, r1, #(0xf << 20)\n\t"
-    "MCR     p15, #0, r1, c1, c0, #2\n\t"
-    "MOV     r1, #0\n\t"
-    "MCR     p15, #0, r1, c7, c5, #4\n\t"
-    "MOV     r0,#0x40000000\n\t"
-    "FMXR    FPEXC, r0\n\t"
-    "b       _cstartup\n\n"
+    "ldr pc, _reset_h\n\t"
+    "ldr pc, _undefined_instruction_vector_h\n\t"
+    "ldr pc, _software_interrupt_vector_h\n\t"
+    "ldr pc, _prefetch_abort_vector_h\n\t"
+    "ldr pc, _data_abort_vector_h\n\t"
+    "ldr pc, _unused_handler_h\n\t"
+    "ldr pc, _interrupt_vector_h\n\t"
+    "ldr pc, _fast_interrupt_vector_h\n\n"
+  "_reset_h:                           .word   _reset_\n"
+  "_undefined_instruction_vector_h:    .word   undefined_instruction_vector\n"
+  "_software_interrupt_vector_h:       .word   software_interrupt_vector\n"
+  "_prefetch_abort_vector_h:           .word   prefetch_abort_vector\n"
+  "_data_abort_vector_h:               .word   data_abort_vector\n"
+  "_unused_handler_h:                  .word   _reset_\n"
+  "_interrupt_vector_h:                .word   interrupt_vector\n"
+  "_fast_interrupt_vector_h:           .word   fast_interrupt_vector\n\n"
+  "_reset_:\n\t"
+    "mov     r0, #0x8000\n\t"
+    "mov     r1, #0x0000\n\t"
+    "ldmia   r0!,{r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
+    "stmia   r1!,{r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
+    "ldmia   r0!,{r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
+    "stmia   r1!,{r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
+    "mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )\n\t"
+    "msr cpsr_c, r0\n\t"
+    "mov sp, #0x7000\n\t"
+    "mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )\n\t"
+    "msr cpsr_c, r0\n\t"
+    "mov sp, #0x8000\n\t"
+    "mrc p15,0,r0,c1,c0,0\n\t"
+    "orr r0,#SCTLR_ENABLE_BRANCH_PREDICTION\n\t"
+    "orr r0,#SCTLR_ENABLE_DATA_CACHE\n\t"
+    "orr r0,#SCTLR_ENABLE_INSTRUCTION_CACHE\n\t"
+    "mcr p15,0,r0,c1,c0,0\n\t"
+    "MRC p15, #0, r1, c1, c0, #2\n\t"
+    "ORR r1, r1, #(0xf << 20)\n\t"
+    "MCR p15, #0, r1, c1, c0, #2\n\t"
+    "MOV r1, #0\n\t"
+    "MCR p15, #0, r1, c7, c5, #4\n\t"
+    "MOV r0,#0x40000000\n\t"
+    "FMXR FPEXC, r0\n\t"
+    "bl      _cstartup\n\n"
   "_inf_loop:\n\t"
-    "b       _inf_loop"
+    "b       _inf_loop\n\n"
+  "_get_stack_pointer:\n\t"
+    "str     sp, [sp]\n\t"
+    "ldr     r0, [sp]\n\t"
+    "mov     pc, lr\n\n"
+  "_enable_interrupts:\n\t"
+    "mrs     r0, cpsr\n\t"
+    "bic     r0, r0, #0x80\n\t"
+    "msr     cpsr_c, r0\n\t"
+    "mov     pc, lr\n\n"
+  "_disable_interrupts:\n\t"
+    "mrs     r0, cpsr\n\t"
+    "orr     r0, r0, #0x80\n\t"
+    "msr     cpsr_c, r0\n\t"
+    "mov     pc, lr\n"
 );
 
 extern int __bss_start__;
 extern int __bss_end__;
 
 extern int main();
-
-#define RPI_SYSTIMER_BASE       0x20003000
-typedef struct {
-    volatile uint32_t control_status;
-    volatile uint32_t counter_lo;
-    volatile uint32_t counter_hi;
-    volatile uint32_t compare0;
-    volatile uint32_t compare1;
-    volatile uint32_t compare2;
-    volatile uint32_t compare3;
-    } rpi_sys_timer_t;
-static rpi_sys_timer_t* rpiSystemTimer = (rpi_sys_timer_t*)RPI_SYSTIMER_BASE;
 
 void kernel_main( unsigned int r0, unsigned int r1, unsigned int atags ) {
   main();
@@ -81,13 +153,17 @@ void _cstartup( unsigned int r0, unsigned int r1, unsigned int r2 )
 // TODO: Fix this
 unsigned long millis()
 {
-  return rpiSystemTimer->counter_lo * 0.001;
+  return RPI_GetSystemTimer()->counter_lo * 0.001;
 }
 
-// TODO: Implement interrupts
+// Implement interrupts
 void sei()
 {
-//  _enable_interrupts();
+  _enable_interrupts();
 }
 
+void cli()
+{
+  _disable_interrupts();
+}
 #endif

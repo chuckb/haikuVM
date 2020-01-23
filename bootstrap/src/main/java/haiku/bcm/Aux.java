@@ -4,7 +4,6 @@ import haiku.vm.NativeCBody;
 import haiku.vm.NativeCFunction;
 import static haiku.bcm.AuxConstants.*;
 import static haiku.bcm.GPIO.*;
-import static haiku.bcm.GPIOConstants.*;
 
 @NativeCBody(cImpl = "volatile unsigned int* aux;")
 
@@ -29,24 +28,22 @@ public class Aux {
    * @param bits  7 or 8 data bits.
    */
   public static void initMiniUART(int baud, int bits) {
-    /* Setup GPIO 14 and 15 as alternative function 5 which is
-        UART 1 TXD/RXD. These need to be set before enabling the UART */
-    // Clean the three bits first
-    setGPIO(GPFSEL1, getGPIO(GPFSEL1) & ~(7<<FSEL14));
-    setGPIOBit(GPFSEL1, FSEL14, GPAF5);
-//    setGPIOBit(GPFSEL1, FSEL15, GPAF5);
+    // Setup GPIO 14 and 15 as alternative function 5 which is
+    // UART 1 TXD/RXD. These need to be set before enabling the UART
+    SetGpioPinFunction(PIN.GPIO14, ALT_FUNCTION.FS_ALT5);
+    //SetGpioPinFunction(PIN.GPIO15, ALT_FUNCTION.FS_ALT5);
 
     // Set control signal to disable internal pull ups/pull downs
-    setGPIO(GPPUD, 0);
+    SetGPIORegister(o_GPPUD, 0);
     // Setup time for control signal per docs...note that these are not
     // techincally CPU cycles, so this is longer than necessary.
     for ( int i=0; i<150; i++ ) { }
     // Signal clock to strobe appropriate GPIO control pads
-    setGPIO(GPPUDCLK0, (1 << 14));
+    SetGPIORegister(o_GPPUDCLK0, (1 << 14));
     // Delay for strobing to complete
     for ( int i=0; i<150; i++ ) { }
     // Turn off signal clock control
-    setGPIO(GPPUDCLK0, 0);
+    SetGPIORegister(o_GPPUDCLK0, 0);
 
     // Set the enable bit to enabled...this is required
     // before accessing any UART registers.

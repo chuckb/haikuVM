@@ -33,9 +33,8 @@ public class HaikuMicroKernelWithConsole extends haiku.vm.MicroKernel {
 			 */
 			panic(0, 0);
 
-      // Assume the Rpi0 is the target
-      // TODO: Fix. Make generic.
-      setAuxBase(Rpi0Lib.PERIPHERIAL_BASE + 0x215000);
+      // Set the auxilliary base address.
+      setAuxBase(Rpi.GetPERIPHERAL_BASE() + 0x215000);
       // Initialize mini UART for console output display
       initMiniUART(115200, 8);
 
