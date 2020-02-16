@@ -88,7 +88,7 @@ public class BuildMakes {
 			for (int i = 0; i < files.length; i++) {
 				if (files[i].isDirectory()) {
 					copyHaikuVM(files[i]);
-				} else if (files[i].getName().endsWith(".c") || files[i].getName().endsWith(".cpp") || files[i].getName().endsWith(".h") || files[i].getName().endsWith(".ino") || files[i].getName().endsWith(".properties")){
+				} else if (files[i].getName().endsWith(".c") || files[i].getName().endsWith(".cpp") || files[i].getName().endsWith(".h") || files[i].getName().endsWith(".ino") || files[i].getName().endsWith(".x") || files[i].getName().endsWith(".properties")){
 					File target;
 					String vdir=files[i].getAbsolutePath().substring(dirHaikuVMSource.getAbsolutePath().length()).replace('\\', '/');
 
