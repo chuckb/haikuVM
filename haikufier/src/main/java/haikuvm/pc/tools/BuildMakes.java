@@ -83,7 +83,8 @@ public class BuildMakes {
 	}
 
 	private void copyHaikuVM(File srcdir) throws IOException {
-		if (srcdir.exists()) {
+    Verbose.println(srcdir.toString());
+    if (srcdir.exists()) {
 			File files[]=srcdir.listFiles();
 			for (int i = 0; i < files.length; i++) {
 				if (files[i].isDirectory()) {
