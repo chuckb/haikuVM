@@ -31,7 +31,7 @@ public class Aux {
     // Setup GPIO 14 and 15 as alternative function 5 which is
     // UART 1 TXD/RXD. These need to be set before enabling the UART
     SetGpioPinFunction(PIN.GPIO14, ALT_FUNCTION.FS_ALT5);
-    //SetGpioPinFunction(PIN.GPIO15, ALT_FUNCTION.FS_ALT5);
+    SetGpioPinFunction(PIN.GPIO15, ALT_FUNCTION.FS_ALT5);
 
     // Set control signal to disable internal pull ups/pull downs
     SetGPIORegister(o_GPPUD, 0);
@@ -65,10 +65,11 @@ public class Aux {
     // Disable modem control
     setAux(AUX_MU_MCR_REG, 0);
 
-    /* Disable all interrupts from MU and clear the fifos */
+    /* Mind the eratta https://raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf */
+    /* Disable all interrupts from MU */
     setAux(AUX_MU_IER_REG, 0);
-    // Why do this?
-//    setAux(AUX_MU_IIR_REG, 0xC6);
+    /* Clear the fifos */
+    setAux(AUX_MU_IIR_REG, 0xC6);
 
     // Set baud rate
     /* Transposed calculation from Section 2.2.1 of the ARM peripherals
