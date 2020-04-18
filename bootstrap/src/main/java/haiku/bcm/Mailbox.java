@@ -38,13 +38,20 @@ public class Mailbox {
   @NativeCFunction(cImpl = "return RPI_PropertyProcess();")
   public static native int PropertyProcess();
 
+  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1);")
+  private static native void _PropertyAddTag(int tag);
+
   /**
    * Add a property tag to the current tag list.
    *
    * @param tag The tag to add.
    */
-  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1);")
-  public static native void PropertyAddTag(MAILBOX_TAG tag);
+  public static void PropertyAddTag(MAILBOX_TAG tag) {
+    _PropertyAddTag(tag.ordinal());
+  };
+
+  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2);")
+  private static native void _PropertyAddTag(int tag, int va1);
 
   /**
    * Add a property tag to the current tag list. Send one data value for the tag.
@@ -52,8 +59,12 @@ public class Mailbox {
    * @param tag The tag to add.
    * @param va1 Data value to send to the tag.
    */
-  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2);")
-  public static native void PropertyAddTag(MAILBOX_TAG tag, int va1);
+  public static void PropertyAddTag(MAILBOX_TAG tag, int va1) {
+    _PropertyAddTag(tag.ordinal(), va1);
+  }
+
+  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3);")
+  private static native void _PropertyAddTag(int tag, int va1, int va2);
 
   /**
    * Add a property tag to the current tag list. Send two data values for the tag.
@@ -62,8 +73,12 @@ public class Mailbox {
    * @param va1 Data value to send to the tag.
    * @param va2 Data value to send to the tag.
    */
-  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3);")
-  public static native void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2);
+  public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2) {
+    _PropertyAddTag(tag.ordinal(), va1, va2);
+  }
+
+  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4);")
+  private static native void _PropertyAddTag(int tag, int va1, int va2, int va3);
 
   /**
    * Add a property tag to the current tag list. Send three data values for the tag.
@@ -73,8 +88,12 @@ public class Mailbox {
    * @param va2 Data value to send to the tag.
    * @param va3 Data value to send to the tag.
    */
-  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4);")
-  public static native void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3);
+  public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3) {
+    _PropertyAddTag(tag.ordinal(), va1, va2, va3);
+  }
+
+  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4, arg5);")
+  private static native void _PropertyAddTag(int tag, int va1, int va2, int va3, int va4);
 
   /**
    * Add a property tag to the current tag list. Send four data values for the tag.
@@ -85,11 +104,12 @@ public class Mailbox {
    * @param va3 Data value to send to the tag.
    * @param va4 Data value to send to the tag.
    */
-  @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4, arg5);")
-  public static native void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3, int va4);
+  public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3, int va4) {
+    _PropertyAddTag(tag.ordinal(), va1, va2, va3, va4);
+  }
 
   @NativeCFunction(cImpl = "return RPI_PropertyGet((rpi_mailbox_tag_t)arg1);")
-  private static native int _PropertyGet(MAILBOX_TAG tag);
+  private static native int _PropertyGet(int tag);
 
   /**
    * Given a tag, fetch the property information retrieved from the mailbox API call.
@@ -98,7 +118,7 @@ public class Mailbox {
    * @return    The MailboxProperty instance for the property tag fetched.
    */
   public static MailboxProperty PropertyGet(MAILBOX_TAG tag) {
-    return new MailboxProperty(_PropertyGet(tag));
+    return new MailboxProperty(_PropertyGet(tag.ordinal()));
   }
 
   /**
