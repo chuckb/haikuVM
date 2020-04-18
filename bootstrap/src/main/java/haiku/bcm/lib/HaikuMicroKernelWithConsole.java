@@ -46,7 +46,7 @@ public class HaikuMicroKernelWithConsole extends haiku.vm.MicroKernel {
          * Wrong or not thread save:
          */
         public void write(int b) throws IOException {
-            miniUARTWrite((char)b);
+            miniUARTWrite(b);
         }
       });
       System.err = System.out;

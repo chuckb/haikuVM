@@ -5,7 +5,7 @@ import haiku.vm.NativeCFunction;
 import static haiku.bcm.AuxConstants.*;
 import static haiku.bcm.GPIO.*;
 
-@NativeCBody(cImpl = "volatile unsigned int* aux;")
+@NativeCBody(cImpl = "uint32_t volatile * aux;")
 
 public class Aux {
   @NativeCFunction(cImpl = "aux[arg1] = arg2;")
@@ -14,8 +14,8 @@ public class Aux {
   @NativeCFunction(cImpl = "return aux[arg1];")
   public static native int getAux(int offset);
 
-  @NativeCFunction(cImpl = "aux = (unsigned int*)arg1;")
-  public static native void setAuxBase(int gpio_base);
+  @NativeCFunction(cImpl = "aux = (uint32_t volatile *)arg1;")
+  public static native void setAuxBase(int auxBase);
 
   @NativeCFunction(cImpl = "aux[arg1] |= (arg3 << arg2);")
   public static native void setAuxBit(int offset, int bit, int value);
@@ -52,7 +52,7 @@ public class Aux {
     // Disable interrupts
     setAux(AUX_MU_IER_REG, 0);
 
-    /* Disable flow control,enable transmitter and receiver! */
+    /* Disable flow control, disable transmitter and receiver! */
     setAux(AUX_MU_CNTL_REG, 0);
 
     /* Decide between seven or eight-bit mode */
@@ -89,11 +89,7 @@ public class Aux {
   public synchronized static void miniUARTWrite( char c )
   {
     /* Wait until the UART has an empty space in the FIFO */
-    while (true) {
-      if ((getAux(AUX_MU_LSR_REG) & AUX_MULSR_TX_EMPTY) != 0) {
-        break;
-      }
-    }
+    while ((getAux(AUX_MU_LSR_REG) & AUX_MULSR_TX_EMPTY) == 0) { }
 
     // Cast to get ascii value of the unicode char.
     int ascii = (int) c;
@@ -105,18 +101,30 @@ public class Aux {
    * Write out a byte to the FIFO buffer of the UART
    * by waiting for a spot to become available. Note that
    * this routine can wait forever.
-   * @param c   The byte to write.
+   * @param b   The byte to write.
    */
   public synchronized static void miniUARTWrite( byte b )
   {
     /* Wait until the UART has an empty space in the FIFO */
-    while (true) {
-      if ((getAux(AUX_MU_LSR_REG) & AUX_MULSR_TX_EMPTY) != 0) {
-        break;
-      }
-    }
+    while ((getAux(AUX_MU_LSR_REG) & AUX_MULSR_TX_EMPTY) == 0) { }
 
     /* Write the byte to the FIFO for transmission */
     setAux(AUX_MU_IO_REG, (int)b);
+  }
+
+  /**
+   * Write out lower 8 bits of int to the FIFO buffer of the UART
+   * by waiting for a spot to become available. Mask out the top
+   * 24 bits per the manual. They will not be written. Note that
+   * this routine can wait forever.
+   * @param i   The int to write.
+   */
+  public synchronized static void miniUARTWrite( int i )
+  {
+    /* Wait until the UART has an empty space in the FIFO */
+    while ((getAux(AUX_MU_LSR_REG) & AUX_MULSR_TX_EMPTY) == 0) { }
+
+    /* Write the byte to the FIFO for transmission */
+    setAux(AUX_MU_IO_REG, i & 0x000000FF);
   }
 }
