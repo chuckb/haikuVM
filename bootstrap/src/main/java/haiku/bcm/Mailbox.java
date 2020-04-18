@@ -108,8 +108,8 @@ public class Mailbox {
     _PropertyAddTag(tag.ordinal(), va1, va2, va3, va4);
   }
 
-  @NativeCFunction(cImpl = "return RPI_PropertyGet((rpi_mailbox_tag_t)arg1);")
-  private static native int _PropertyGet(int tag);
+  @NativeCFunction(cImpl = "return (uintptr_t)RPI_PropertyGet((rpi_mailbox_tag_t)arg1);")
+  private static native long _PropertyGet(int tag);
 
   /**
    * Given a tag, fetch the property information retrieved from the mailbox API call.
