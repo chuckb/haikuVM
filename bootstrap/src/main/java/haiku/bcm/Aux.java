@@ -95,7 +95,28 @@ public class Aux {
       }
     }
 
+    // Cast to get ascii value of the unicode char.
+    int ascii = (int) c;
     /* Write the character to the FIFO for transmission */
-    setAux(AUX_MU_IO_REG, c);
+    setAux(AUX_MU_IO_REG, ascii);
+  }
+
+  /**
+   * Write out a byte to the FIFO buffer of the UART
+   * by waiting for a spot to become available. Note that
+   * this routine can wait forever.
+   * @param c   The byte to write.
+   */
+  public synchronized static void miniUARTWrite( byte b )
+  {
+    /* Wait until the UART has an empty space in the FIFO */
+    while (true) {
+      if ((getAux(AUX_MU_LSR_REG) & AUX_MULSR_TX_EMPTY) != 0) {
+        break;
+      }
+    }
+
+    /* Write the byte to the FIFO for transmission */
+    setAux(AUX_MU_IO_REG, (int)b);
   }
 }
