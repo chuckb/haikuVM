@@ -101,6 +101,10 @@ public class MailboxConstants {
     private MAILBOX_TAG(int id) {
         this.id = id;
     }
+
+    public int getId() {
+      return this.id;
+    }
   }
 
   public enum CLOCK_ID {

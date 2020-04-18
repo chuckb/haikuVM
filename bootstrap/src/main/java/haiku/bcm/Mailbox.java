@@ -47,7 +47,7 @@ public class Mailbox {
    * @param tag The tag to add.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag) {
-    _PropertyAddTag(tag.ordinal());
+    _PropertyAddTag(tag.getId());
   };
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2);")
@@ -60,7 +60,7 @@ public class Mailbox {
    * @param va1 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1) {
-    _PropertyAddTag(tag.ordinal(), va1);
+    _PropertyAddTag(tag.getId(), va1);
   }
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3);")
@@ -74,7 +74,7 @@ public class Mailbox {
    * @param va2 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2) {
-    _PropertyAddTag(tag.ordinal(), va1, va2);
+    _PropertyAddTag(tag.getId(), va1, va2);
   }
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4);")
@@ -89,7 +89,7 @@ public class Mailbox {
    * @param va3 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3) {
-    _PropertyAddTag(tag.ordinal(), va1, va2, va3);
+    _PropertyAddTag(tag.getId(), va1, va2, va3);
   }
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4, arg5);")
@@ -105,7 +105,7 @@ public class Mailbox {
    * @param va4 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3, int va4) {
-    _PropertyAddTag(tag.ordinal(), va1, va2, va3, va4);
+    _PropertyAddTag(tag.getId(), va1, va2, va3, va4);
   }
 
   @NativeCFunction(cImpl = "return (uintptr_t)RPI_PropertyGet((rpi_mailbox_tag_t)arg1);")
@@ -118,7 +118,7 @@ public class Mailbox {
    * @return    The MailboxProperty instance for the property tag fetched.
    */
   public static MailboxProperty PropertyGet(MAILBOX_TAG tag) {
-    return new MailboxProperty(_PropertyGet(tag.ordinal()));
+    return new MailboxProperty(_PropertyGet(tag.getId()));
   }
 
   /**

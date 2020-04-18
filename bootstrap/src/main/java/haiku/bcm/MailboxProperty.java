@@ -32,7 +32,13 @@ public class MailboxProperty {
    * @return The MAILBOX_TAG
    */
   public MAILBOX_TAG getTag() {
-    return MAILBOX_TAG.values()[_getTag(this.addr)];
+    int tagId = _getTag(this.addr);
+    for (MAILBOX_TAG tag : MAILBOX_TAG.values()) {
+      if (tag.getId() == tagId) {
+        return tag;
+      }
+    }
+    throw new IllegalArgumentException();
   }
 
   @NativeCFunction(cImpl = "return ((rpi_mailbox_property_t *)arg1)->byte_length;")
