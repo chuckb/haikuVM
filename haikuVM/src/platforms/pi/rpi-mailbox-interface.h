@@ -28,8 +28,14 @@
 
 */
 
+#if defined ( RPI0 ) || defined ( RPI1 ) || defined ( RPI2 ) || defined ( RPI3 ) || defined ( RPI4 )
+
 #ifndef RPI_MAILBOX_INTERFACE_H
 #define RPI_MAILBOX_INTERFACE_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
     @brief An enum of the RPI->Videocore firmware mailbox property interface
@@ -166,5 +172,11 @@ extern void RPI_PropertyInit( void );
 extern void RPI_PropertyAddTag( rpi_mailbox_tag_t tag, ... );
 extern int RPI_PropertyProcess( void );
 extern rpi_mailbox_property_t* RPI_PropertyGet( rpi_mailbox_tag_t tag );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
 #endif

@@ -28,10 +28,16 @@
 
 */
 
+#if defined ( RPI0 ) || defined ( RPI1 ) || defined ( RPI2 ) || defined ( RPI3 ) || defined ( RPI4 )
+
 #ifndef RPI_MAILBOX_H
 #define RPI_MAILBOX_H
 
 #include "rpi-base.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define RPI_MAILBOX0_BASE    ( PERIPHERAL_BASE + 0xB880 )
 
@@ -73,5 +79,11 @@ typedef struct {
 
 extern void RPI_Mailbox0Write( mailbox0_channel_t channel, int value );
 extern int RPI_Mailbox0Read( mailbox0_channel_t channel );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
 #endif
