@@ -34,16 +34,19 @@ public class Aux {
     SetGpioPinFunction(PIN.GPIO15, ALT_FUNCTION.FS_ALT5);
 
     // Set control signal to disable internal pull ups/pull downs
-    SetGPIORegister(o_GPPUD, 0);
+    SetGPPUD(0);
+//    SetGPIORegister(o_GPPUD, 0);
     // Setup time for control signal per docs...note that these are not
     // techincally CPU cycles, so this is longer than necessary.
     for ( int i=0; i<150; i++ ) { }
     // Signal clock to strobe appropriate GPIO control pads
-    SetGPIORegister(o_GPPUDCLK0, (1 << 14));
+    SetGPPUDCLK0((1 << 14));
+//    SetGPIORegister(o_GPPUDCLK0, (1 << 14));
     // Delay for strobing to complete
     for ( int i=0; i<150; i++ ) { }
     // Turn off signal clock control
-    SetGPIORegister(o_GPPUDCLK0, 0);
+    SetGPPUDCLK0(0);
+//    SetGPIORegister(o_GPPUDCLK0, 0);
 
     // Set the enable bit to enabled...this is required
     // before accessing any UART registers.

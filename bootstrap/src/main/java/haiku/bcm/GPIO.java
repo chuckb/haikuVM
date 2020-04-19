@@ -91,7 +91,13 @@ public class GPIO {
    */
   @NativeCFunction(cImpl = "*(volatile unsigned int *)((uint8_t*)(void*)&RPI_GetGpio()[arg1]) = arg2;")
   public static native void SetGPIORegister(int offset, int value);  
-        
+
+  @NativeCFunction(cImpl = "RPI_GetGpio()->GPPUD = arg1;")
+  public static native void SetGPPUD(int value);
+
+  @NativeCFunction(cImpl = "RPI_GetGpio()->GPPUDCLK0 = arg1;")
+  public static native void SetGPPUDCLK0(int value);
+
   /**
    * Get the GPIO register value given an offset from the GPIO base address.
    * @param offset  Offset in bytes from GPIO base address
