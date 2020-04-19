@@ -89,7 +89,7 @@ public class GPIO {
    * @param offset  Offset in bytes from GPIO base address
    * @param value   Value to set
    */
-  @NativeCFunction(cImpl = "*(unsigned int *)((char*)(void*)&RPI_GetGpio()[arg1]) = arg2;")
+  @NativeCFunction(cImpl = "*(volatile unsigned int *)((uint8_t*)(void*)&RPI_GetGpio()[arg1]) = arg2;")
   public static native void SetGPIORegister(int offset, int value);  
         
   /**
@@ -97,7 +97,7 @@ public class GPIO {
    * @param offset  Offset in bytes from GPIO base address
    * @return        The value contained within the register
    */
-  @NativeCFunction(cImpl = "return *(unsigned int *)((char*)(void*)&RPI_GetGpio()[arg1])")
+  @NativeCFunction(cImpl = "return *(volatile unsigned int *)((uint8_t*)(void*)&RPI_GetGpio()[arg1])")
   public static native int GetGPIORegister(int offset);
 
   /**
@@ -108,7 +108,7 @@ public class GPIO {
    * @param bit     Bit to set
    * @param value   Value to shift into register
    */
-  @NativeCFunction(cImpl = "*(unsigned int *)((char*)(void*)&RPI_GetGpio()[arg1]) |= (arg3 << arg2);")
+  @NativeCFunction(cImpl = "*(volatile unsigned int *)((uint8_t*)(void*)&RPI_GetGpio()[arg1]) |= (arg3 << arg2);")
   public static native void SetGPIORegisterBit(int offset, int bit, int value);
 
   /**
