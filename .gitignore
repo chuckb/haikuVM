@@ -49,6 +49,7 @@
 
 # Package Files #
 *.jar
+!jraspbootcom-all.jar
 *.war
 *.nar
 *.ear

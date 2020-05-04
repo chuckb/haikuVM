@@ -76,7 +76,11 @@ else
 ifeq ($(strip $(HAIKU_EXTENSION)),.srec)
 all: $(HAIKU_APP_NAME).srec sizedummy.rcx
 else
+ifeq ($(strip $(HAIKU_EXTENSION)),.img)
+all: $(HAIKU_APP_NAME).img
+else
 all: $(HAIKU_APP_NAME)
+endif
 endif
 endif
 endif
@@ -171,6 +175,12 @@ sizedummy: $(HAIKU_APP_NAME).elf
 sizedummy.rcx: $(HAIKU_APP_NAME).srec
 	@echo 'Invoking: Print Size'
 	-h8300-hms-size --format=srec '$<'
+	@echo 'Finished building: $@'
+	@echo ' '
+
+$(HAIKU_APP_NAME).img: $(HAIKU_APP_NAME).elf
+	@echo 'Create image (img format)'
+	$(HAIKU_OBJCOPY) '$<' -O binary '$@'
 	@echo 'Finished building: $@'
 	@echo ' '
 

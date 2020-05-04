@@ -1,6 +1,7 @@
 /*
 *  Created on: 01.06.2020
-*  Author: chuckb - adapted from Raspberry Pi Bare Metal Tutorials
+*  Author: Chuck Benedict - adapted from Raspberry Pi Bare Metal Tutorials
+*  Copyright (c) 2020, Chuck Benedict
 */
 //  Part of the Raspberry-Pi Bare Metal Tutorials
 //  Copyright (c) 2013-2015, Brian Sidebotham
@@ -35,7 +36,7 @@
 
 // This is the assembler startup for BCM2835
 __asm__(
-  ".section \".text.startup\"\n\n"
+  ".pushsection \".text.startup\"\n\n"
   ".global _start\n"
   ".global _get_stack_pointer\n"
   ".global _exception_table\n"
@@ -113,6 +114,7 @@ __asm__(
     "orr     r0, r0, #0x80\n\t"
     "msr     cpsr_c, r0\n\t"
     "mov     pc, lr\n"
+  ".popsection\n"
 );
 
 extern int __bss_start__;
