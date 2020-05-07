@@ -6,6 +6,8 @@
     This software is licensed under the MIT License.
     Please see the LICENSE file included with this software.
 
+    Additions for LED access to RPI3 made by Chuck Benedict
+    Copyright (c) 2020, Chuck Benedict
 */
 
 #if defined ( RPI0 ) || defined ( RPI1 ) || defined ( RPI2 ) || defined ( RPI3 ) || defined ( RPI4 )
@@ -15,6 +17,7 @@
 
 #include <stddef.h>
 #include "rpi-base.h"
+#include "rpi-mailbox-interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,8 +27,8 @@ extern "C" {
 #define RPI_GPIO_BASE       ( PERIPHERAL_BASE + 0x200000UL )
 
 /* Different Raspberry pi models have the ACT LED on different GPIO pins. The RPI3 doesn't have
-   access to the ACT LED through a GPIO pin can so can't be used in this tutorial, but the RPI3B+
-   does have the ACT LED on a GPIO pin again and so can be used with this tutorial! */
+   access to the ACT LED through a GPIO, but is accessable through the mailbox interface through undocumented
+   calls (see https://www.raspberrypi.org/forums/viewtopic.php?f=43&t=109137&start=100#p989907) The RPI3A+ and RPI3B+ do have the ACT LED on a GPIO pin again. */
 
 #if defined( RPI1 ) && !defined( IOBPLUS )
 
@@ -54,10 +57,6 @@ extern "C" {
     #define LED_GPCLR       GPCLR0
     #define LED_GPIO_BIT    29
 
-#elif defined( RPI3 )
-
-    #error The RPI3 has an ioexpander between the ACT LED and the GPU and so cannot be used in this tutorial
-
 #elif defined( RPI4 )
     /* The RPi4 model has the ACT LED attached to GPIO 42
        https://github.com/raspberrypi/linux/blob/rpi-4.19.y/arch/arm/boot/dts/bcm2838-rpi-4-b.dts */
@@ -71,6 +70,9 @@ extern "C" {
 #if defined(RPI0) || defined(RPI1)
     #define LED_ON()        do { RPI_GetGpio()->LED_GPCLR = ( 1 << LED_GPIO_BIT ); } while( 0 )
     #define LED_OFF()       do { RPI_GetGpio()->LED_GPSET = ( 1 << LED_GPIO_BIT ); } while( 0 )
+#elif defined(RPI3) && !defined(IOBPLUS)
+    #define LED_ON()        do { RPI_PropertyInit(); RPI_PropertyAddTag( TAG_SET_GPIO_STATE, 130, 1); RPI_PropertyProcess(); } while ( 0 )  /* Pin 130 is ACT_LED */
+    #define LED_OFF()       do { RPI_PropertyInit(); RPI_PropertyAddTag( TAG_SET_GPIO_STATE, 130, 0); RPI_PropertyProcess(); } while ( 0 )
 #else
     #define LED_ON()        do { RPI_GetGpio()->LED_GPSET = ( 1 << LED_GPIO_BIT ); } while( 0 )
     #define LED_OFF()       do { RPI_GetGpio()->LED_GPCLR = ( 1 << LED_GPIO_BIT ); } while( 0 )

@@ -44,7 +44,9 @@ size_t o_GPAFEN1 = offsetof(rpi_gpio_t, GPAFEN1);
 size_t o_GPPUD = offsetof(rpi_gpio_t, GPPUD);
 size_t o_GPPUDCLK0 = offsetof(rpi_gpio_t, GPPUDCLK0);
 size_t o_GPPUDCLK1 = offsetof(rpi_gpio_t, GPPUDCLK1);
+#if !defined ( RPI3 ) || defined ( IOBPLUS ) 
 size_t o_LED_GPFSEL = offsetof(rpi_gpio_t, LED_GPFSEL);
+#endif
 
 rpi_gpio_t* RPI_GetGpio(void)
 {

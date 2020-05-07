@@ -35,6 +35,7 @@
 
 /* Mailbox 0 mapped to it's base address */
 static mailbox_t* rpiMailbox0 = (mailbox_t*)RPI_MAILBOX0_BASE;
+static mailbox_t* rpiMailbox1 = (mailbox_t*)RPI_MAILBOX1_BASE;
 
 size_t o_Read = offsetof(mailbox_t, Read);
 size_t o_Poll = offsetof(mailbox_t, Poll);
@@ -43,7 +44,7 @@ size_t o_Status = offsetof(mailbox_t, Status);
 size_t o_Configuration = offsetof(mailbox_t, Configuration);
 size_t o_Write = offsetof(mailbox_t, Write);
 
-void RPI_Mailbox0Write( mailbox0_channel_t channel, int value )
+void RPI_Mailbox1Write( mailbox0_channel_t channel, int value )
 {
     /* For information about accessing mailboxes, see:
        https://github.com/raspberrypi/firmware/wiki/Accessing-mailboxes */
@@ -54,10 +55,10 @@ void RPI_Mailbox0Write( mailbox0_channel_t channel, int value )
 
     /* Wait until the mailbox becomes available and then write to the mailbox
        channel */
-    while( ( rpiMailbox0->Status & ARM_MS_FULL ) != 0 ) { }
+    while( ( rpiMailbox1->Status & ARM_MS_FULL ) != 0 ) { }
 
     /* Write the modified value + channel number into the write register */
-    rpiMailbox0->Write = value;
+    rpiMailbox1->Write = value;
 }
 
 

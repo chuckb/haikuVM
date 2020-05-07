@@ -4,6 +4,9 @@
     Copyright (c) 2015, Brian Sidebotham
     All rights reserved.
 
+    Corrections to mailbox interface definitions made by Chuck Benedict.
+    Copyright (c) 2020, Chuck Benedict
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
@@ -40,6 +43,7 @@ extern "C" {
 #endif
 
 #define RPI_MAILBOX0_BASE    ( PERIPHERAL_BASE + 0xB880 )
+#define RPI_MAILBOX1_BASE    ( RPI_MAILBOX0_BASE + 0x20 )
 
 /* The available mailbox channels in the BCM2835 Mailbox interface.
    See https://github.com/raspberrypi/firmware/wiki/Mailboxes for
@@ -68,16 +72,18 @@ enum mailbox_status_reg_bits {
 /* Define a structure which defines the register access to a mailbox.
    Not all mailboxes support the full register set! */
 typedef struct {
-    volatile unsigned int Read;
+    union {
+      volatile unsigned int Read;
+      volatile unsigned int Write;
+    };
     volatile unsigned int reserved1[((0x90 - 0x80) / 4) - 1];
     volatile unsigned int Poll;
     volatile unsigned int Sender;
     volatile unsigned int Status;
     volatile unsigned int Configuration;
-    volatile unsigned int Write;
-    } mailbox_t;
+} mailbox_t;
 
-extern void RPI_Mailbox0Write( mailbox0_channel_t channel, int value );
+extern void RPI_Mailbox1Write( mailbox0_channel_t channel, int value );
 extern int RPI_Mailbox0Read( mailbox0_channel_t channel );
 
 #ifdef __cplusplus

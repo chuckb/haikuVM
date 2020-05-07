@@ -177,6 +177,22 @@ void RPI_PropertyAddTag( rpi_mailbox_tag_t tag, ... )
             }
             break;
 
+        case TAG_GET_GPIO_STATE:
+        case TAG_SET_GPIO_STATE:
+            pt[pt_index++] = 8;     /* size */
+            pt[pt_index++] = 0;     /* Request */
+
+            if ( ( tag == TAG_SET_GPIO_STATE ) )
+            {
+                pt[pt_index++] = va_arg( vl, int ); /* Pin number */
+                pt[pt_index++] = va_arg( vl, int ); /* Pin state */
+            }
+            else
+            {
+                pt_index += 2;
+            }
+            break;
+            
         default:
             /* Unsupported tags, just remove the tag from the list */
             pt_index--;
@@ -205,7 +221,7 @@ int RPI_PropertyProcess( void )
     for( i = 0; i < (pt[PT_OSIZE] >> 2); i++ )
         printf( "Request: %3d %8.8X\r\n", i, pt[i] );
 #endif
-    RPI_Mailbox0Write( MB0_TAGS_ARM_TO_VC, (unsigned int)pt );
+    RPI_Mailbox1Write( MB0_TAGS_ARM_TO_VC, (unsigned int)pt );
 
     result = RPI_Mailbox0Read( MB0_TAGS_ARM_TO_VC );
 

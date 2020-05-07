@@ -121,7 +121,11 @@ typedef enum {
     TAG_TEST_PALETTE = 0x4400B,
     TAG_SET_PALETTE = 0x4800B,
     TAG_SET_CURSOR_INFO = 0x8011,
-    TAG_SET_CURSOR_STATE = 0x8010
+    TAG_SET_CURSOR_STATE = 0x8010,
+
+    /* Firmware GPIOs */
+    TAG_GET_GPIO_STATE = 0x30041,
+    TAG_SET_GPIO_STATE = 0x38041
 
     } rpi_mailbox_tag_t;
 
