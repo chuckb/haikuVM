@@ -718,7 +718,7 @@ extern const char * bytecodeDesc[];
 extern float int16ToFloat(uint16_t i);
 extern jfloat floatToInt16(float f);
 #if HAIKU_GC == HAIKU_IncrementalGC
-extern void incrementalGC(int incremental);
+extern void incrementalGC(jheapsize incremental);
 #define setMarkBit(obj)
 #else
 #define incrementalGC(x)
