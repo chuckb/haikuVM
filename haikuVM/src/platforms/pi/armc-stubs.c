@@ -52,6 +52,8 @@
     This mechanism becomes visible when you write stub routines for OS
     interfaces. You must include errno.h, then disable the macro, like this:
 */
+#if defined ( RPI0 ) || defined ( RPI1 ) || defined ( RPI2 ) || defined ( RPI3 ) || defined ( RPI4 )
+
 #include <errno.h>
 #undef errno
 extern int errno;
@@ -61,6 +63,9 @@ extern int errno;
 
 /* Required include for times() */
 #include <sys/times.h>
+
+#include "rpi-aux.h"
+#include "rpi-shared.h"
 
 /* A pointer to a list of environment variables and their values. For a minimal
    environment, this empty list is adequate: */
@@ -227,12 +232,14 @@ int wait( int *status )
     return -1;
 }
 
-/*
 void outbyte( char b )
 {
-    RPI_AuxMiniUartWrite( b );
+    if (console_enabled) {
+      RPI_AuxMiniUartWrite( b );
+    } else {
+      (void)b;
+    }
 }
-*/
 
 /* Write to a file. libc subroutines will use this system routine for output to
    all files, including stdout—so if you need to generate any output, for
@@ -243,13 +250,19 @@ void outbyte( char b )
    manufacturer) to actually perform the output. */
 int _write( int file, char *ptr, int len )
 {
-  return len;
-/*
     int todo;
 
     for( todo = 0; todo < len; todo++ )
       outbyte(*ptr++);
 
     return len;
-*/
 }
+
+/* Required for redefined printf function */
+
+void _putchar(char character)
+{
+  outbyte(character);
+}
+
+#endif

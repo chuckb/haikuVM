@@ -33,10 +33,8 @@ public class HaikuMicroKernelWithConsole extends haiku.vm.MicroKernel {
 			 */
 			panic(0, 0);
 
-      // Set the auxilliary base address.
-      setAuxBase(Rpi.GetPERIPHERAL_BASE() + 0x215000);
       // Initialize mini UART for console output display
-      initMiniUART(115200, 8);
+      AuxMiniUartInit(115200, 8);
 
       // Wire up System streams to UART
 	    System.out = new PrintStream(new OutputStream() {
@@ -46,7 +44,7 @@ public class HaikuMicroKernelWithConsole extends haiku.vm.MicroKernel {
          * Wrong or not thread save:
          */
         public void write(int b) throws IOException {
-            miniUARTWrite(b);
+          AuxMiniUartWrite((char)b);
         }
       });
       System.err = System.out;

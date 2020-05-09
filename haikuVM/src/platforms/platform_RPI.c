@@ -31,8 +31,11 @@
 
 #if defined ( RPI0 ) || defined ( RPI1 ) || defined ( RPI2 ) || defined ( RPI3 ) || defined ( RPI4 )
 
+#include <stdarg.h>
 #include "haikuJ2C.h"
 #include "pi/rpi-systimer.h"
+#include "pi/rpi-shared.h"
+#include "pi/printf.h"
 
 // This is the assembler startup for BCM2835
 __asm__(
@@ -121,6 +124,21 @@ extern int __bss_start__;
 extern int __bss_end__;
 
 extern int main();
+
+int console_enabled = 0;
+
+#if _DEBUG
+int jprintf(const char * format, ...) {
+	char buf[280]; // nicht globaler buf !!
+	int err;
+	va_list list;
+	va_start(list, format);
+	vsprintf(buf, format, list);
+	err=printf(buf);
+	va_end(list);
+	return err;
+}
+#endif
 
 void kernel_main( unsigned int r0, unsigned int r1, unsigned int atags ) {
   main();
