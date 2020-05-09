@@ -17,6 +17,7 @@ extern void MarkBit(jobject obj);
 extern jheapsize getObjLength(jobject obj);
 extern jobject Reuse(jheapsize size);
 
+Debug(extern int GCcount;)
 
 /**
  * Conservative

@@ -9,9 +9,6 @@
 #include "simpleOS.h"
 #include "gcVariants/interface.h"
 
-
-
-#define Debug(x)
 const class_t YLjava_lang_ObjectClass PROGMEM = {
 	&java_lang_Object__class,
 	sizeof(jobject),
@@ -77,7 +74,7 @@ jheapsize getObjLength(jobject obj) {
 #define min(a,b) ((a)<(b)?a:b)
 extern const char * findClass(jclass clazz);
 
-static int	GCcount=0;
+int	GCcount=0;
 static jheapsize usedHeap=0;
 /**
 * mode=0 -> FREE

@@ -106,13 +106,18 @@
 //#define HAIKU_Char HAIKU_CHAR_8
 //#define HAIKU_InitialMainThreadStackSize 142 //95 96 (25 for Threads) (142/[1300-1350] for fib(30)) (180/[?-1500] for fib(35))
 
-#define DEBUG 0
+#ifndef DEBUG
+  #define DEBUG 0
+#endif
 #if DEBUG
 #define Debug(x) x
 #else
 #define Debug(x)
 #endif
 
+#ifndef TRACEING
+  #define TRACEING 0
+#endif
 #define TRACEING 0
 #if TRACEING
 #define Traceout(...) jprintf(__VA_ARGS__)

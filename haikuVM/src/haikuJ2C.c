@@ -12,9 +12,6 @@
 int indent=0;
 #endif
 
-
-#define Debug(x)
-
 TVM tvm;
 
 stackBlock4Debug_t* currentStackblock;
@@ -91,7 +88,9 @@ static jstack info(stackBlock4Debug_t*F, int pos, top_t *top) {
 		jprintf("%p %2d\t%8p Function %s\n ", &F->stackbase[pos], pos, top->s0.a, findFoo((unsigned char *)top->s0.a));
 	} else {
 		// basic data type
-		jprintf("%p %2d\t%8p %4d %12d %12lld %15g\n ", &F->stackbase[pos], pos, top->s0.a, (jbyte)top->s0.i, top->s0.i, top->j, top->d);
+//		jprintf("%p %2d\t%8p %4d %12d %12lld %15g\n ", &F->stackbase[pos], pos, top->s0.a, (jbyte)top->s0.i, top->s0.i, top->j, top->d);
+    // TOOD: Having trouble pass floats for ARM...for now, don't.
+		jprintf("%p %2d\t%8p %4d %12d %12lld\n ", &F->stackbase[pos], pos, top->s0.a, (jbyte)top->s0.i, top->s0.i, top->j);
 	}
 	return NULL;
 }
@@ -574,6 +573,7 @@ void invoke(const ByteCode * bytecode){
 		// L     s
 		//...o123
 		nlsp=dataSp-purParams;
+/*
 #if	_DEBUG
 		if(1||t>0) {
 			Debug(jprintf("\nlength %d\t", stack->length);)
@@ -581,6 +581,7 @@ void invoke(const ByteCode * bytecode){
 			Debug(jprintf("max_stack=%d locals=%d params=%d\n", max_stack, pgm_read_byteRef(bytecode->purLocals), purParams);)
 		}
 #endif
+*/
 		// check if method frame fits into current stack segment.
 //		if (stack->length-nlsp<=max_stack) {
 		if (&currentStackblock->stackbase[currentStackblock->length]<=nlsp+max_stack) {

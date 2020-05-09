@@ -127,7 +127,7 @@ extern int main();
 
 int console_enabled = 0;
 
-#if _DEBUG
+#if (_DEBUG || DEBUG || TRACEING)
 int jprintf(const char * format, ...) {
 	char buf[280]; // nicht globaler buf !!
 	int err;
