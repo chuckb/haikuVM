@@ -19,13 +19,34 @@ git clone https://github.com/chuckb/haikuVM.git
 sudo apt-get install openjdk-8-jdk
 ```
 - Install [ARM cross compiler](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
-- Connect USB serial cable to Pi GPIO 14/15. You need to know the port assigned by your host OS. For Mac, my Adafruit serial dongle was assigned to /dev/tty.SLAB_USBtoUART.
+- Connect USB serial cable to Pi GPIO 14/15. You need to know the port assigned by your host OS. For Mac, my Adafruit serial dongle was assigned to ```/dev/tty.SLAB_USBtoUART```.
+- Clone the bootloader repo:
+```bash
+git clone https://github.com/chuckb/raspbootin.git
+```
+- Build a bootloader for your Pi:
+```bash
+cd raspbootin/raspbootin2
+make (rpi | rpi2 | rpi3)
+```
+- Get an SD card, remove all files, copy just built ```kernel.img``` to root of SD card.
+- Copy the following [Raspberry Pi firmware files](https://github.com/raspberrypi/firmware/tree/master/boot) to the root of your SD card:
+  - ```bootcode.bin```
+  - ```fixup.dat```
+  - ```start.elf```
+- Create a ```config.txt`` on the SD card with the following in it:
+```
+start_file=start.elf
+fixup_file=fixup.dat
+kernel_address=0x02000000
+```
+- Insert SD card into Pi, and power up the Pi.
 - Outside of haikuVM directory, make another project directory:
 ```bash
 mkdir myproject
 cd myproject
 ```
-- Build and deploy (assume a Pi 3A+, a serial port of /dev/tty.SLAB_USBtoUART, and the location of the haikuVM directory is ```/Users/chuck_benedict/haikuVM```):
+- Build and deploy (assume a Pi 3A+, a serial port of ```/dev/tty.SLAB_USBtoUART```, and the location of the haikuVM directory is ```/Users/chuck_benedict/haikuVM```):
 ```bash
 /Users/chuck_benedict/haikuVM/bin/haiku -v --Config rpi3apbp --Config:Port /dev/tty.SLAB_USBtoUART /Users/chuck_benedict/haikuVM/examples/src/main/java/rpi/tutorial/PiExerciser.java
 ```
@@ -70,4 +91,4 @@ I have added this project to github because the original project is located in a
 
 Subproject builds are now working for most projects, however haikufier tests are not yet working from gradle. Use ```gradlew build -x :haikufier:test``` to exclude.
 
-A gradle plugin to automate downloading the HaikuVM build system, compiling Java classes using the gradle Java plugin (so that IDEs will work nicely), running the haikulink tools, running the cross compiler, and then running a boot loader to upload your kernel to the target is done, but needs some more TLC. It also automates building a bootable SD card image for the Raspberry Pi with a serial bootloader.
+A [gradle plugin](https://github.com/chuckb/HaikuVMPlugin) to automate downloading the HaikuVM build system, compiling Java classes using the gradle Java plugin (so that IDEs will work nicely), running the haikulink tools, running the cross compiler, and then running a boot loader to upload your kernel to the target, is done, but needs a bit more TLC. It also automates building a bootable SD card image for the Raspberry Pi with a serial bootloader.
