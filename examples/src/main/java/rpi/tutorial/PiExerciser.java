@@ -11,6 +11,24 @@ import haiku.vm.NativeCFunction;
 
 import java.lang.StringBuilder;
 
+/**
+ * Bare metal Java exercise program for Raspberry Pi.<p>
+ * Run this with:<p>
+ * <pre>
+ * mkdir myProject
+ * cd myProject
+ * /Users/chuck_benedict/haikuVM/bin/haiku -v --Config (rpi0 | rpi1 | rpi2 | rpi3 | rpi3apbp | rpi4) /Users/chuck_benedict/haikuVM/examples/src/main/java/rpi/tutorial/PiExerciser.java
+ * </pre>
+ * <a href="https://github.com/chuckb/raspbootin/tree/master/raspbootin2">Bootloader</a> will need to be installed on Raspberry Pi SD card.
+ */
+
+//
+// Interrupt service routine using Java decorator support included with HaikuMV.
+// This decorator includes the following C source whichs overload the interrupt service routine
+// defined in the platform support file <a href="file:../../../../../../haikuVM/src/platforms/platform_RPI.c">platform_RPI.c</a>
+// The ARM timer, based on the setup code in the main Java app, will call this
+// service handler when the scaled tick count elapses.
+//
 @NativeCBody(cImpl = "#include <platforms/pi/rpi-armtimer.h>\n" +
 "volatile int lit = 0;\n" +
 "extern \"C\" void __attribute__((interrupt(\"IRQ\"))) interrupt_vector(void) {\n" +
@@ -25,12 +43,6 @@ import java.lang.StringBuilder;
 "    }\n" +
 "}")
 
-/**
- * Run this with:
- * mkdir myProject
- * cd myProject
- * /Users/chuck_benedict/haikuVM/bin/haiku -v --Config (rpi0 | rpi1 | rpi2 | rpi3 | rpi3apbp | rpi4) /Users/chuck_benedict/haikuVM/examples/src/main/java/rpi/tutorial/PiExerciser.java
- */
 public class PiExerciser {
   /**
    * Get the external lit flag updated by the interrupt service routine

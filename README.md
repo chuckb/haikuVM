@@ -34,7 +34,7 @@ make (rpi | rpi2 | rpi3)
   - ```bootcode.bin```
   - ```fixup.dat```
   - ```start.elf```
-- Create a ```config.txt`` on the SD card with the following in it:
+- Create a ```config.txt``` on the SD card with the following in it:
 ```
 start_file=start.elf
 fixup_file=fixup.dat
