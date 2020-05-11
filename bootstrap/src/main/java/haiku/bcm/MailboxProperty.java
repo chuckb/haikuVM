@@ -21,6 +21,10 @@ public class MailboxProperty {
    * class.
    */
   public MailboxProperty(long addr) {
+    // Assume a null pointer return is invalid
+    if (addr == 0x0) {
+      throw new IllegalArgumentException();
+    }
     this.addr = addr;
   }
 
@@ -42,30 +46,30 @@ public class MailboxProperty {
   }
 
   @NativeCFunction(cImpl = "return ((rpi_mailbox_property_t *)arg1)->byte_length;")
-  private native int _getByteLength(long addr);
+  private native long _getByteLength(long addr);
 
   /**
    * Get the byte length of data buffer returned for properties that return data.
    * @return The byte length
    */
-  public int getByteLength() {
+  public long getByteLength() {
     return _getByteLength(this.addr);
   }
 
   @NativeCFunction(cImpl = "return ((rpi_mailbox_property_t *)arg1)->data.value_32;")
-  private native int _getValue32(long addr);
+  private native long _getValue32(long addr);
 
   /**
    * Get the data value for properties that simply fetch an int.
    *
    * @return The value fetched for the property
    */
-  public int getValue32() {
+  public long getValue32() {
     return _getValue32(this.addr);
   }
 
   @NativeCFunction(cImpl = "return ((rpi_mailbox_property_t *)arg1)->data.buffer_8[arg2];")
-  private native byte _getBuffer8(long addr, int offset);
+  private native short _getBuffer8(long addr, int offset);
 
   /**
    * Get the data values for properties that fetch a byte array.
@@ -73,12 +77,12 @@ public class MailboxProperty {
    * @param offset The offset into the byte array of the byte to fetch.
    * @return The value fetched at the offset.
    */
-  public byte getBuffer8(int offset) {
+  public short getBuffer8(int offset) {
     return _getBuffer8(this.addr, offset);
   }
 
   @NativeCFunction(cImpl = "return ((rpi_mailbox_property_t *)arg1)->data.buffer_32[arg2];")
-  private native int _getBuffer32(long addr, int offset);
+  private native long _getBuffer32(long addr, int offset);
   
   /**
    * Get the data values for properties that fetch a int array.
@@ -86,7 +90,7 @@ public class MailboxProperty {
    * @param offset The offset into the int array of the int to fetch.
    * @return The value fetched at the offset.
    */
-  public int getBuffer32(int offset) {
+  public long getBuffer32(int offset) {
     return _getBuffer32(this.addr, offset);
   }
 }

@@ -11,7 +11,11 @@ public class StringBuilder {
 	public StringBuilder() {
 		chars=new char[0];
 	}
-	
+  
+  public int length() {
+    return chars.length;
+  }
+
 	public String toString() {
 		return new String(chars);
 	}

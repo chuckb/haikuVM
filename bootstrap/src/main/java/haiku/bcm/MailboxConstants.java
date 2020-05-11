@@ -108,16 +108,26 @@ public class MailboxConstants {
   }
 
   public enum CLOCK_ID {
-    TAG_CLOCK_RESERVED,
-    TAG_CLOCK_EMMC,
-    TAG_CLOCK_UART,
-    TAG_CLOCK_ARM,
-    TAG_CLOCK_CORE,
-    TAG_CLOCK_V3D,
-    TAG_CLOCK_H264,
-    TAG_CLOCK_ISP,
-    TAG_CLOCK_SDRAM,
-    TAG_CLOCK_PIXEL,
-    TAG_CLOCK_PWM
+    TAG_CLOCK_RESERVED(0),
+    TAG_CLOCK_EMMC(1),
+    TAG_CLOCK_UART(2),
+    TAG_CLOCK_ARM(3),
+    TAG_CLOCK_CORE(4),
+    TAG_CLOCK_V3D(5),
+    TAG_CLOCK_H264(6),
+    TAG_CLOCK_ISP(7),
+    TAG_CLOCK_SDRAM(8),
+    TAG_CLOCK_PIXEL(9),
+    TAG_CLOCK_PWM(10);
+
+    private final int id;
+
+    private CLOCK_ID(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+      return this.id;
+    }
   }
 }

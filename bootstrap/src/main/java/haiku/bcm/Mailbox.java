@@ -51,7 +51,7 @@ public class Mailbox {
   };
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2);")
-  private static native void _PropertyAddTag(int tag, int va1);
+  private static native void _PropertyAddTag2(int tag, int va1);
 
   /**
    * Add a property tag to the current tag list. Send one data value for the tag.
@@ -60,11 +60,11 @@ public class Mailbox {
    * @param va1 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1) {
-    _PropertyAddTag(tag.getId(), va1);
+    _PropertyAddTag2(tag.getId(), va1);
   }
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3);")
-  private static native void _PropertyAddTag(int tag, int va1, int va2);
+  private static native void _PropertyAddTag3(int tag, int va1, int va2);
 
   /**
    * Add a property tag to the current tag list. Send two data values for the tag.
@@ -74,11 +74,11 @@ public class Mailbox {
    * @param va2 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2) {
-    _PropertyAddTag(tag.getId(), va1, va2);
+    _PropertyAddTag3(tag.getId(), va1, va2);
   }
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4);")
-  private static native void _PropertyAddTag(int tag, int va1, int va2, int va3);
+  private static native void _PropertyAddTag4(int tag, int va1, int va2, int va3);
 
   /**
    * Add a property tag to the current tag list. Send three data values for the tag.
@@ -89,11 +89,11 @@ public class Mailbox {
    * @param va3 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3) {
-    _PropertyAddTag(tag.getId(), va1, va2, va3);
+    _PropertyAddTag4(tag.getId(), va1, va2, va3);
   }
 
   @NativeCFunction(cImpl = "RPI_PropertyAddTag((rpi_mailbox_tag_t)arg1, arg2, arg3, arg4, arg5);")
-  private static native void _PropertyAddTag(int tag, int va1, int va2, int va3, int va4);
+  private static native void _PropertyAddTag5(int tag, int va1, int va2, int va3, int va4);
 
   /**
    * Add a property tag to the current tag list. Send four data values for the tag.
@@ -105,7 +105,7 @@ public class Mailbox {
    * @param va4 Data value to send to the tag.
    */
   public static void PropertyAddTag(MAILBOX_TAG tag, int va1, int va2, int va3, int va4) {
-    _PropertyAddTag(tag.getId(), va1, va2, va3, va4);
+    _PropertyAddTag5(tag.getId(), va1, va2, va3, va4);
   }
 
   @NativeCFunction(cImpl = "return (uintptr_t)RPI_PropertyGet((rpi_mailbox_tag_t)arg1);")
