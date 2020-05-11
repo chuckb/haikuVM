@@ -170,11 +170,28 @@ void _cstartup( unsigned int r0, unsigned int r1, unsigned int r2 )
     }
 }
 
-// TODO: Fix this
+// Tell GCC to never optimize this function away
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 unsigned long millis()
 {
-  return RPI_GetSystemTimer()->counter_lo * 0.001;
+  uint32_t c_hi;
+  uint32_t c_lo;
+  uint64_t final;
+
+  // Avoid rollover
+  do {
+    c_hi = RPI_GetSystemTimer()->counter_hi;
+    c_lo = RPI_GetSystemTimer()->counter_lo;
+  } while (c_hi != RPI_GetSystemTimer()->counter_hi);
+
+  // Assemble final value
+  final = (uint64_t)c_hi << 32 | c_lo;
+
+  // ARM system timer yields microseconds...convert to milliseconds
+  return final * 0.001;
 }
+#pragma GCC pop_options
 
 // Implement interrupts
 void sei()
